@@ -201,6 +201,93 @@ class CNET(nn.Module):
         return x
 
 
+class CNNTP2D(nn.Module):
+
+    def __init__(self, netData):
+        super(CNET, self).__init__()
+
+        self.netData = netData
+        self.iSize = netData['iSize']
+        keyList = list(netData.keys())
+
+        if "BN" in keyList:
+            self.BN = netData['BN']
+        else:
+            self.BN = False
+
+        self.nLayer = netData['nLayer']
+        self.fSize = netData['fSize']
+        self.nUnit = netData['nUnit']
+        self.padding = netData['padding']
+        self.stride = netData['stride']
+        self.linear = netData['linear']
+        act = netData['act']
+        if not isinstance(act, list):
+            act = [act for i in range(self.nLayer)]
+        self.act = act
+        
+        if self.linear:
+            self.act.append("linear")
+
+        self.buildModel()
+    
+    def buildModel(self):
+    
+        iSize = self.iSize
+        mode = True
+        for i, fSize in enumerate(self.fSize):
+            if fSize == -1:
+                mode = False
+               
+            if mode:
+                self.add_module(
+                    "conv_"+str(i+1),
+                    nn.ConvTranspose2d(
+                        iSize,
+                        self.nUnit[i],
+                        fSize,
+                        stride=self.stride[i],
+                        padding=self.padding[i],
+                        bias=False)
+                )
+                iSize = self.nUnit[i]
+            elif fSize == -1:
+                self.add_module(
+                    "Flatten",
+                    nn.Flatten())
+                iSize = self.getSize()
+            else:
+                self.add_module(
+                    "MLP_"+str(i+1),
+                    nn.Linear(iSize, fSize, bias=False)
+                )
+                iSize = fSize
+            if self.BN and fSize is not -1:
+                if (i == (self.nLayer-1)) is not True:
+                    if mode:
+                        self.add_module(
+                            "batchNorm_"+str(i+1),
+                            nn.BatchNorm2d(self.nUnit[i])
+                        )
+                    else:
+                        self.add_module(
+                            "batchNorm_"+str(i+1),
+                            nn.BatchNorm1d(fSize)
+                        )
+            act = getActivation(self.act[i])
+            if act is not None and fSize != -1:
+                self.add_module(
+                    "act_"+str(i+1),
+                    act
+    
+    def forward(self, x):
+        if type(x) == tuple:
+            x = x[0]
+        for layer in self.children():
+            x = layer(x)
+        return x
+
+
 class LSTMNET(nn.Module):
     """
     LSTMNET class는 LSTM을 지원한다.
