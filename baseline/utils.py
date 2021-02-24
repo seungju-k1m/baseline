@@ -3,7 +3,8 @@ import numpy as np
 import json
 import torchvision.transforms.functional as TF
 
-from baseline.baseNetwork import MLP, CNET, LSTMNET, CNN1D, Res1D, Cat, Unsequeeze, View, CNNTP2D
+from baseline.baseNetwork import \
+    MLP, CNET, LSTMNET, CNN1D, Res1D, Cat, Unsequeeze, View, CNNTP2D, GovAvgPooling
 
 
 """
@@ -126,7 +127,7 @@ def constructNet(netData):
     netCat = netData['netCat']
     if netCat == 'Input':
         return None
-    Net = [MLP, CNET, LSTMNET, CNN1D, Res1D, Cat, Unsequeeze, View, CNNTP2D]
+    Net = [MLP, CNET, LSTMNET, CNN1D, Res1D, Cat, Unsequeeze, View, CNNTP2D, GovAvgPooling]
     netName = [
         "MLP",
         "CNN2D",
@@ -136,7 +137,8 @@ def constructNet(netData):
         "Cat",
         "Unsequeeze",
         "View",
-        "CNNTP2D"]
+        "CNNTP2D",
+        "GovAvgPooling"]
     ind = netName.index(netCat)
 
     baseNet = Net[ind]

@@ -91,6 +91,15 @@ class MLP(nn.Module):
         return x
 
 
+class GovAvgPooling(nn.Module):
+
+    def __init__(self):
+        super(GovAvgPooling, self).__init__()
+    
+    def forward(self, x):
+        x = torch.mean(x, 2)
+
+
 class CNET(nn.Module):
     """
     CNET class는 CNN을 지원한다.
@@ -115,12 +124,12 @@ class CNET(nn.Module):
         self.iSize = netData['iSize']
         keyList = list(netData.keys())
 
+        self.nLayer = netData['nLayer']
+        self.fSize = netData['fSize']
         if "BN" in keyList:
             self.BN = netData['BN']
         else:
-            self.BN = False
-        self.nLayer = netData['nLayer']
-        self.fSize = netData['fSize']
+            self.BN = [False for i in range(len(self.fSize))]
         self.nUnit = netData['nUnit']
         self.padding = netData['padding']
         self.stride = netData['stride']
@@ -139,7 +148,8 @@ class CNET(nn.Module):
 
         iSize = self.iSize
         mode = True
-        for i, fSize in enumerate(self.fSize):
+        i = 0
+        for fSize, BN in zip(self.fSize, self.BN):
             if fSize == -1:
                 mode = False
             if mode:
@@ -162,24 +172,18 @@ class CNET(nn.Module):
                     nn.Linear(iSize, fSize, bias=False)
                 )
                 iSize = fSize
-            if self.BN and fSize is not -1:
-                if (i == (self.nLayer-1)) is not True:
-                    if mode:
-                        self.add_module(
-                            "batchNorm_"+str(i+1),
-                            nn.BatchNorm2d(self.nUnit[i])
-                        )
-                    else:
-                        self.add_module(
-                            "batchNorm_"+str(i+1),
-                            nn.BatchNorm1d(fSize)
-                        )
+            if BN:
+                self.add_module(
+                    "batchNorm_"+str(i+1),
+                    nn.BatchNorm2d(self.nUnit[i])
+                )
             act = getActivation(self.act[i])
             if act is not None and fSize != -1:
                 self.add_module(
                     "act_"+str(i+1),
                     act
                 )
+            i += 1
 
     def getSize(self, WH=96):
         """
@@ -209,14 +213,12 @@ class CNNTP2D(nn.Module):
         self.netData = netData
         self.iSize = netData['iSize']
         keyList = list(netData.keys())
-
+        self.nLayer = netData['nLayer']
+        self.fSize = netData['fSize']
         if "BN" in keyList:
             self.BN = netData['BN']
         else:
-            self.BN = False
-
-        self.nLayer = netData['nLayer']
-        self.fSize = netData['fSize']
+            self.BN = [False for i in range(len(self.fSize))]
         self.nUnit = netData['nUnit']
         self.padding = netData['padding']
         self.stride = netData['stride']
@@ -235,7 +237,8 @@ class CNNTP2D(nn.Module):
     
         iSize = self.iSize
         mode = True
-        for i, fSize in enumerate(self.fSize):
+        i = 0
+        for fSize, BN in enumerate(self.fSize, self.BN):
             if fSize == -1:
                 mode = False
                
@@ -262,23 +265,17 @@ class CNNTP2D(nn.Module):
                     nn.Linear(iSize, fSize, bias=False)
                 )
                 iSize = fSize
-            if self.BN and fSize is not -1:
-                if (i == (self.nLayer-1)) is not True:
-                    if mode:
-                        self.add_module(
-                            "batchNorm_"+str(i+1),
-                            nn.BatchNorm2d(self.nUnit[i])
-                        )
-                    else:
-                        self.add_module(
-                            "batchNorm_"+str(i+1),
-                            nn.BatchNorm1d(fSize)
-                        )
+            if BN:
+                self.add_module(
+                    "batchNorm_"+str(i+1),
+                    nn.BatchNorm2d(self.nUnit[i])
+                )
             act = getActivation(self.act[i])
             if act is not None and fSize != -1:
                 self.add_module(
                     "act_"+str(i+1),
                     act
+            i += 1
     
     def forward(self, x):
         if type(x) == tuple:
