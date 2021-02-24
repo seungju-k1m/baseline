@@ -105,7 +105,7 @@ def getActivation(actName, **kwargs):
     if actName == 'relu':
         act = torch.nn.ReLU()
     if actName == 'leakyRelu':
-        nSlope = 1e-2 if 'slope' not in kwargs.keys() else kwargs['slope']
+        nSlope = 0.2 if 'slope' not in kwargs.keys() else kwargs['slope']
         act = torch.nn.LeakyReLU(negative_slope=nSlope)
     if actName == 'sigmoid':
         act = torch.nn.Sigmoid()
