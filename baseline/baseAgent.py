@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from baseline.utils import constructNet
+from baseline.baseline.utils import constructNet
 
 
 class Node:
@@ -204,6 +204,20 @@ class baseAgent(nn.Module):
                     totalNorm += norm
         
         return totalNorm
+    
+    def evalMode(self):
+        for prior in self.priority:
+            layerDict = self.priorityModel[prior]
+            for name in layerDict.keys():
+                node = layerDict[name]
+                node.model.eval()
+    
+    def trainMode(self):
+        for prior in self.priority:
+            layerDict = self.priorityModel[prior]
+            for name in layerDict.keys():
+                node = layerDict[name]
+                node.model.train()
 
     def clippingNorm(self, maxNorm):
         inputD = []

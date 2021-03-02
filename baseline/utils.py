@@ -3,8 +3,7 @@ import numpy as np
 import json
 import torchvision.transforms.functional as TF
 
-from baseline.baseNetwork import \
-    MLP, CNET, LSTMNET, CNN1D, Res1D, Cat, Unsequeeze, View, CNNTP2D, GovAvgPooling
+from baseline.baseline.baseNetwork import MLP, CNET, LSTMNET, CNN1D, Res1D, Cat, Unsequeeze, View, CNNTP2D, GovAvgPooling
 
 
 """
@@ -75,11 +74,14 @@ def getOptim(optimData, agent, floatV=False):
         else:
             inputD = agent.parameters()
         if name == 'adam':
+            beta1 = 0.9 if 'beta1' not in keyList else optimData['beta1']
+            beta2 = 0.99 if 'beta2' not in keyList else optimData['beta2']
             optim = torch.optim.Adam(
                 inputD,
                 lr=lr,
                 weight_decay=decay,
-                eps=eps
+                eps=eps,
+                betas=(beta1, beta2)
                 )
         if name == 'sgd':
             momentum = 0 if 'momentum' not in keyList else optimData['momentum']

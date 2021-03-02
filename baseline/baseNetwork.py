@@ -22,7 +22,8 @@ def getActivation(actName, **kwargs):
     if actName == 'relu':
         act = torch.nn.ReLU()
     if actName == 'leakyRelu':
-        nSlope = 1e-2 if 'slope' not in kwargs.keys() else kwargs['slope']
+        nSlope = 0.2 if 'slope' not in kwargs.keys() else kwargs['slope']
+        # act = torch.nn.LeakyReLU(negative_slope=nSlope)
         act = torch.nn.LeakyReLU(negative_slope=nSlope)
     if actName == 'sigmoid':
         act = torch.nn.Sigmoid()
@@ -70,11 +71,10 @@ class MLP(nn.Module):
                 )
             
             if self.BN:
-                if (i == (self.nLayer-1)) is not True:
-                    self.add_module(
-                        "batchNorm_"+str(i+1),
-                        nn.BatchNorm1d(self.fSize[i])
-                    )
+                self.add_module(
+                    "batchNorm_"+str(i+1),
+                    nn.BatchNorm1d(self.fSize[i])
+                )
             act = getActivation(self.act[i])
             if act is not None:
                 self.add_module(
@@ -93,11 +93,15 @@ class MLP(nn.Module):
 
 class GovAvgPooling(nn.Module):
 
-    def __init__(self):
+    def __init__(self, adat):
         super(GovAvgPooling, self).__init__()
     
     def forward(self, x):
-        x = torch.mean(x, 2)
+        if type(x) == tuple:
+            x = x[0]
+        x = x.view(x.shape[0], -1)
+        x = torch.mean(x, dim=1)
+        return x
 
 
 class CNET(nn.Module):
@@ -208,7 +212,7 @@ class CNET(nn.Module):
 class CNNTP2D(nn.Module):
 
     def __init__(self, netData):
-        super(CNET, self).__init__()
+        super(CNNTP2D, self).__init__()
 
         self.netData = netData
         self.iSize = netData['iSize']
@@ -238,7 +242,7 @@ class CNNTP2D(nn.Module):
         iSize = self.iSize
         mode = True
         i = 0
-        for fSize, BN in enumerate(self.fSize, self.BN):
+        for fSize, BN in zip(self.fSize, self.BN):
             if fSize == -1:
                 mode = False
                
@@ -275,8 +279,9 @@ class CNNTP2D(nn.Module):
                 self.add_module(
                     "act_"+str(i+1),
                     act
+                )
             i += 1
-    
+
     def forward(self, x):
         if type(x) == tuple:
             x = x[0]
