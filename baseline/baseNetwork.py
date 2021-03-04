@@ -547,6 +547,69 @@ class ResidualConv(nn.Module):
         return z
 
 
+def conv2D(
+    in_num,
+    out_num,
+    kernel_size=3, padding=1, stride=1, 
+    eps=1e-5, momentum=0.1,  
+    is_linear=False, 
+    is_batch=False
+):
+    
+    if is_linear:
+        temp = nn.Sequential(nn.Conv2d(in_num, out_num, kernel_size=kernel_size, 
+                             padding=padding, stride=stride, bias=False))
+    else:
+        
+        if is_batch:
+            temp = nn.Sequential(
+                nn.Conv2d(in_num, out_num, kernel_size=kernel_size, 
+                          padding=padding, stride=stride, bias=False),
+                nn.BatchNorm1d(out_num, eps=eps, momentum=momentum),
+                nn.ReLU()
+                )
+        else:
+            temp = nn.Sequential(
+                nn.Conv2d(in_num, out_num, kernel_size=kernel_size, 
+                          padding=padding, stride=stride, bias=False),
+                nn.ReLU()
+                )
+
+    return temp
+
+
+class RESCONV2D(nn.Module):
+    
+    def __init__(self, data):
+        super(ResidualConv, self).__init__()
+        in_num = self.data['iSize']
+        blockNum = self.data['blockNum']
+        mid_num = int(in_num / 2)
+        self.layers = []
+        self.blockNum = blockNum
+        for i in range(blockNum):
+            layers = []
+            layers.append(
+                conv2D(in_num, mid_num, kernel_size=1, padding=0)
+            )
+            layers.append(
+                conv2D(mid_num, in_num)
+            )
+            self.layers.append(layers)
+
+    def forward(self, x):
+        
+        residual = x
+        for i in range(self.blockNum):
+            out = self.layers[i][0](x)
+            x = self.layers[i][1](out)
+            x += residual
+
+            residual = x
+
+        return x
+
+
 class Cat(nn.Module):
     """
     concat을 지원한다.
@@ -573,6 +636,22 @@ class Unsequeeze(nn.Module):
 
     def forward(self, x):
         return torch.unsqueeze(x, dim=self.dim)
+
+
+class AvgPooling(nn.Module):
+
+    def __init__(
+        self,
+        data
+    ):
+        super(AvgPooling, self).__init__()
+        stride = data['stride']
+        fSize = data['fSize']
+        padding = data['padding']
+        self.layer = nn.AvgPool2d(fSize, stride=stride, padding=padding)
+    
+    def forward(self, x):
+        return self.layer(x)
 
 
 class View(nn.Module):
