@@ -19,19 +19,19 @@ def getActivation(actName, **kwargs):
     output:
         act:[torch.nn.activation]
     """
-    if actName == 'relu':
+    if actName == "relu":
         act = torch.nn.ReLU()
-    if actName == 'leakyRelu':
-        nSlope = 0.2 if 'slope' not in kwargs.keys() else kwargs['slope']
+    if actName == "leakyRelu":
+        nSlope = 0.2 if "slope" not in kwargs.keys() else kwargs["slope"]
         # act = torch.nn.LeakyReLU(negative_slope=nSlope)
         act = torch.nn.LeakyReLU(negative_slope=nSlope)
-    if actName == 'sigmoid':
+    if actName == "sigmoid":
         act = torch.nn.Sigmoid()
-    if actName == 'tanh':
+    if actName == "tanh":
         act = torch.nn.Tanh()
-    if actName == 'linear':
+    if actName == "linear":
         act = None
-    
+
     return act
 
 
@@ -52,37 +52,32 @@ class MLP(nn.Module):
     def __init__(self, netData):
         super(MLP, self).__init__()
         self.netData = netData
-        self.nLayer = netData['nLayer']
-        self.fSize = netData['fSize']
-        act = netData['act']
+        self.nLayer = netData["nLayer"]
+        self.fSize = netData["fSize"]
+        act = netData["act"]
         if not isinstance(act, list):
             act = [act for i in range(self.nLayer)]
         self.act = act
-        self.BN = netData['BN']
-        self.iSize = netData['iSize']
+        self.BN = netData["BN"]
+        self.iSize = netData["iSize"]
         self.buildModel()
 
     def buildModel(self):
         iSize = self.iSize
         for i in range(self.nLayer):
             self.add_module(
-                "MLP_"+str(i+1),
-                nn.Linear(iSize, self.fSize[i], bias=False)
-                )
-            
+                "MLP_" + str(i + 1), nn.Linear(iSize, self.fSize[i], bias=False)
+            )
+
             if self.BN:
                 self.add_module(
-                    "batchNorm_"+str(i+1),
-                    nn.BatchNorm1d(self.fSize[i])
+                    "batchNorm_" + str(i + 1), nn.BatchNorm1d(self.fSize[i])
                 )
             act = getActivation(self.act[i])
             if act is not None:
-                self.add_module(
-                    "act_"+str(i+1),
-                    act
-                )
+                self.add_module("act_" + str(i + 1), act)
             iSize = self.fSize[i]
-    
+
     def forward(self, x, shortcut=None):
         if type(x) == tuple:
             x = x[0]
@@ -92,10 +87,9 @@ class MLP(nn.Module):
 
 
 class GovAvgPooling(nn.Module):
-
     def __init__(self, adat):
         super(GovAvgPooling, self).__init__()
-    
+
     def forward(self, x):
         if type(x) == tuple:
             x = x[0]
@@ -125,29 +119,29 @@ class CNET(nn.Module):
         super(CNET, self).__init__()
 
         self.netData = netData
-        self.iSize = netData['iSize']
+        self.iSize = netData["iSize"]
         keyList = list(netData.keys())
 
-        self.nLayer = netData['nLayer']
-        self.fSize = netData['fSize']
+        self.nLayer = netData["nLayer"]
+        self.fSize = netData["fSize"]
         if "BN" in keyList:
-            self.BN = netData['BN']
+            self.BN = netData["BN"]
         else:
             self.BN = [False for i in range(len(self.fSize))]
-        self.nUnit = netData['nUnit']
-        self.padding = netData['padding']
-        self.stride = netData['stride']
-        self.linear = netData['linear']
-        act = netData['act']
+        self.nUnit = netData["nUnit"]
+        self.padding = netData["padding"]
+        self.stride = netData["stride"]
+        self.linear = netData["linear"]
+        act = netData["act"]
         if not isinstance(act, list):
             act = [act for i in range(self.nLayer)]
         self.act = act
-        
+
         if self.linear:
             self.act.append("linear")
 
         self.buildModel()
-        
+
     def buildModel(self):
 
         iSize = self.iSize
@@ -158,35 +152,32 @@ class CNET(nn.Module):
                 mode = False
             if mode:
                 self.add_module(
-                    "conv_"+str(i+1),
-                    nn.Conv2d(iSize, self.nUnit[i], fSize,
-                              stride=self.stride[i],
-                              padding=self.padding[i],
-                              bias=False)
+                    "conv_" + str(i + 1),
+                    nn.Conv2d(
+                        iSize,
+                        self.nUnit[i],
+                        fSize,
+                        stride=self.stride[i],
+                        padding=self.padding[i],
+                        bias=False,
+                    ),
                 )
                 iSize = self.nUnit[i]
             elif fSize == -1:
-                self.add_module(
-                    "Flatten",
-                    nn.Flatten())
+                self.add_module("Flatten", nn.Flatten())
                 iSize = self.getSize()
             else:
                 self.add_module(
-                    "MLP_"+str(i+1),
-                    nn.Linear(iSize, fSize, bias=False)
+                    "MLP_" + str(i + 1), nn.Linear(iSize, fSize, bias=False)
                 )
                 iSize = fSize
             if BN:
                 self.add_module(
-                    "batchNorm_"+str(i+1),
-                    nn.BatchNorm2d(self.nUnit[i])
+                    "batchNorm_" + str(i + 1), nn.BatchNorm2d(self.nUnit[i])
                 )
             act = getActivation(self.act[i])
             if act is not None and fSize != -1:
-                self.add_module(
-                    "act_"+str(i+1),
-                    act
-                )
+                self.add_module("act_" + str(i + 1), act)
             i += 1
 
     def getSize(self, WH=96):
@@ -210,76 +201,69 @@ class CNET(nn.Module):
 
 
 class CNNTP2D(nn.Module):
-
     def __init__(self, netData):
         super(CNNTP2D, self).__init__()
 
         self.netData = netData
-        self.iSize = netData['iSize']
+        self.iSize = netData["iSize"]
         keyList = list(netData.keys())
-        self.nLayer = netData['nLayer']
-        self.fSize = netData['fSize']
+        self.nLayer = netData["nLayer"]
+        self.fSize = netData["fSize"]
         if "BN" in keyList:
-            self.BN = netData['BN']
+            self.BN = netData["BN"]
         else:
             self.BN = [False for i in range(len(self.fSize))]
-        self.nUnit = netData['nUnit']
-        self.padding = netData['padding']
-        self.stride = netData['stride']
-        self.linear = netData['linear']
-        act = netData['act']
+        self.nUnit = netData["nUnit"]
+        self.padding = netData["padding"]
+        self.stride = netData["stride"]
+        self.linear = netData["linear"]
+        act = netData["act"]
         if not isinstance(act, list):
             act = [act for i in range(self.nLayer)]
         self.act = act
-        
+
         if self.linear:
             self.act.append("linear")
 
         self.buildModel()
-    
+
     def buildModel(self):
-    
+
         iSize = self.iSize
         mode = True
         i = 0
         for fSize, BN in zip(self.fSize, self.BN):
             if fSize == -1:
                 mode = False
-               
+
             if mode:
                 self.add_module(
-                    "conv_"+str(i+1),
+                    "conv_" + str(i + 1),
                     nn.ConvTranspose2d(
                         iSize,
                         self.nUnit[i],
                         fSize,
                         stride=self.stride[i],
                         padding=self.padding[i],
-                        bias=False)
+                        bias=False,
+                    ),
                 )
                 iSize = self.nUnit[i]
             elif fSize == -1:
-                self.add_module(
-                    "Flatten",
-                    nn.Flatten())
+                self.add_module("Flatten", nn.Flatten())
                 iSize = self.getSize()
             else:
                 self.add_module(
-                    "MLP_"+str(i+1),
-                    nn.Linear(iSize, fSize, bias=False)
+                    "MLP_" + str(i + 1), nn.Linear(iSize, fSize, bias=False)
                 )
                 iSize = fSize
             if BN:
                 self.add_module(
-                    "batchNorm_"+str(i+1),
-                    nn.BatchNorm2d(self.nUnit[i])
+                    "batchNorm_" + str(i + 1), nn.BatchNorm2d(self.nUnit[i])
                 )
             act = getActivation(self.act[i])
             if act is not None and fSize != -1:
-                self.add_module(
-                    "act_"+str(i+1),
-                    act
-                )
+                self.add_module("act_" + str(i + 1), act)
             i += 1
 
     def forward(self, x):
@@ -307,17 +291,19 @@ class LSTMNET(nn.Module):
     def __init__(self, netData):
         super(LSTMNET, self).__init__()
         self.netData = netData
-        self.hiddenSize = netData['hiddenSize']
-        self.nLayer = netData['nLayer']
-        iSize = netData['iSize']
-        device = netData['device']
+        self.hiddenSize = netData["hiddenSize"]
+        self.nLayer = netData["nLayer"]
+        iSize = netData["iSize"]
+        device = netData["device"]
         self.device = torch.device(device)
-        self.nAgent = self.netData['Number_Agent']
-        self.CellState = (torch.zeros(1, self.nAgent, self.hiddenSize).to(self.device), 
-                          torch.zeros(1, self.nAgent, self.hiddenSize).to(self.device))
+        self.nAgent = self.netData["Number_Agent"]
+        self.CellState = (
+            torch.zeros(1, self.nAgent, self.hiddenSize).to(self.device),
+            torch.zeros(1, self.nAgent, self.hiddenSize).to(self.device),
+        )
         self.rnn = nn.LSTM(iSize, self.hiddenSize, self.nLayer)
-        self.FlattenMode = netData['FlattenMode']
-    
+        self.FlattenMode = netData["FlattenMode"]
+
     def clear(self, index, step=0):
         """
         deprecated by zeroCellStateAgent
@@ -326,7 +312,7 @@ class LSTMNET(nn.Module):
         hn[step, index, :] = torch.zeros(self.hiddenSize).to(self.device)
         cn[step, index, :] = torch.zeros(self.hiddenSize).to(self.device)
         self.CellState = (hn, cn)
-    
+
     def getCellState(self):
         """
         CellState을 반환한다.
@@ -344,27 +330,30 @@ class LSTMNET(nn.Module):
             state:torch.tensor, shape:[1, Agent의 숫자, hiddenSize]
         """
         self.CellState = cellState
-    
+
     def detachCellState(self):
         "LSTM의 BTTT를 지원하기 위해서는 detaching이 필요하다."
         self.CellState = (
             self.CellState[0].clone().detach(),
-            self.CellState[1].clone().detach())
+            self.CellState[1].clone().detach(),
+        )
 
     def zeroCellState(self):
         """
         cellState를 zero로 변환하는 과정이다.
         환경이 초기화 되면, lstm역시 초기화 되어야한다.
         """
-        self.CellState = (torch.zeros(1, self.nAgent, self.hiddenSize).to(self.device), 
-                          torch.zeros(1, self.nAgent, self.hiddenSize).to(self.device))
-    
+        self.CellState = (
+            torch.zeros(1, self.nAgent, self.hiddenSize).to(self.device),
+            torch.zeros(1, self.nAgent, self.hiddenSize).to(self.device),
+        )
+
     def zeroCellStateAgent(self, idx):
         """
         모든 agent가 아닌 특정 agent의 cell state를 0으로 반환
         """
-        h = torch.zeros(self.netData['hiddenSize'])
-        c = torch.zeros(self.netData['hiddenSize'])
+        h = torch.zeros(self.netData["hiddenSize"])
+        c = torch.zeros(self.netData["hiddenSize"])
         self.CellState[0][0, idx] = h
         self.CellState[1][0, idx] = c
 
@@ -383,7 +372,7 @@ class LSTMNET(nn.Module):
                 output = output.view(-1, self.hiddenSize)
                 output = output.view(-1, self.hiddenSize)
             self.CellState = (hn, cn)
-        
+
         # output consists of output, hidden, cell state
         return output
 
@@ -408,35 +397,34 @@ class CNN1D(nn.Module):
     """
 
     def __init__(
-        self,
-        netData,
+        self, netData,
     ):
         super(CNN1D, self).__init__()
         self.netData = netData
-        self.iSize = netData['iSize']
+        self.iSize = netData["iSize"]
         keyList = list(netData.keys())
 
         if "BN" in keyList:
-            self.BN = netData['BN']
+            self.BN = netData["BN"]
         else:
             self.BN = False
-        self.nLayer = netData['nLayer']
-        self.fSize = netData['fSize']
-        self.nUnit = netData['nUnit']
-        self.padding = netData['padding']
-        self.stride = netData['stride']
-        act = netData['act']
+        self.nLayer = netData["nLayer"]
+        self.fSize = netData["fSize"]
+        self.nUnit = netData["nUnit"]
+        self.padding = netData["padding"]
+        self.stride = netData["stride"]
+        act = netData["act"]
         if not isinstance(act, list):
             act = [act for i in range(self.nLayer)]
         self.act = act
-        if 'linear' not in netData.keys():
+        if "linear" not in netData.keys():
             self.linear = False
         else:
-            self.linear = netData['linear']
+            self.linear = netData["linear"]
         if self.linear:
             self.act.append("linear")
         self.buildModel()
-    
+
     def buildModel(self):
         iSize = self.iSize
         mode = True
@@ -445,35 +433,30 @@ class CNN1D(nn.Module):
                 mode = False
             if mode:
                 self.add_module(
-                    "conv1D_"+str(i+1),
+                    "conv1D_" + str(i + 1),
                     nn.Conv1d(
                         iSize,
                         self.nUnit[i],
                         fSize,
                         stride=self.stride[i],
                         padding=self.padding[i],
-                        bias=False)
+                        bias=False,
+                    ),
                 )
                 iSize = self.nUnit[i]
             elif fSize == -1:
-                self.add_module(
-                    "Flatten",
-                    nn.Flatten())
+                self.add_module("Flatten", nn.Flatten())
                 # iSize = self.getSize()
             else:
                 self.add_module(
-                    "MLP_"+str(i+1),
-                    nn.Linear(iSize, fSize, bias=False)
+                    "MLP_" + str(i + 1), nn.Linear(iSize, fSize, bias=False)
                 )
                 iSize = fSize
-            
+
             act = getActivation(self.act[i])
             if act is not None and fSize != -1:
-                self.add_module(
-                    "act_"+str(i+1),
-                    act
-                )
-        
+                self.add_module("act_" + str(i + 1), act)
+
     def getSize(self, WH):
         """
         CNNs의 output의 크기를 확인할 수 있다.
@@ -485,7 +468,7 @@ class CNN1D(nn.Module):
         k = k.view((1, -1))
         size = k.shape[-1]
         return size
-    
+
     def forward(self, x):
         if type(x) == tuple:
             x = x[0]
@@ -497,36 +480,58 @@ class CNN1D(nn.Module):
 def conv1D(
     in_num,
     out_num,
-    kernel_size=3, padding=1, stride=1, 
-    eps=1e-5, momentum=0.1,  
-    is_linear=False, 
-    is_batch=False
+    kernel_size=3,
+    padding=1,
+    stride=1,
+    eps=1e-5,
+    momentum=0.1,
+    is_linear=False,
+    is_batch=False,
 ):
-    
+
     if is_linear:
-        temp = nn.Sequential(nn.Conv1d(in_num, out_num, kernel_size=kernel_size, 
-                             padding=padding, stride=stride, bias=False))
+        temp = nn.Sequential(
+            nn.Conv1d(
+                in_num,
+                out_num,
+                kernel_size=kernel_size,
+                padding=padding,
+                stride=stride,
+                bias=False,
+            )
+        )
     else:
-        
+
         if is_batch:
             temp = nn.Sequential(
-                nn.Conv1d(in_num, out_num, kernel_size=kernel_size, 
-                          padding=padding, stride=stride, bias=False),
+                nn.Conv1d(
+                    in_num,
+                    out_num,
+                    kernel_size=kernel_size,
+                    padding=padding,
+                    stride=stride,
+                    bias=False,
+                ),
                 nn.BatchNorm1d(out_num, eps=eps, momentum=momentum),
-                nn.ReLU()
-                )
+                nn.ReLU(),
+            )
         else:
             temp = nn.Sequential(
-                nn.Conv1d(in_num, out_num, kernel_size=kernel_size, 
-                          padding=padding, stride=stride, bias=False),
-                nn.ReLU()
-                )
+                nn.Conv1d(
+                    in_num,
+                    out_num,
+                    kernel_size=kernel_size,
+                    padding=padding,
+                    stride=stride,
+                    bias=False,
+                ),
+                nn.ReLU(),
+            )
 
     return temp
 
 
 class ResidualConv(nn.Module):
-    
     def __init__(self, in_num):
         super(ResidualConv, self).__init__()
 
@@ -536,9 +541,9 @@ class ResidualConv(nn.Module):
         self.layer2 = conv1D(mid_num, in_num)
 
     def forward(self, x):
-        
+
         residual = x
-        
+
         out = self.layer1(x)
         z = self.layer2(out)
 
@@ -550,55 +555,100 @@ class ResidualConv(nn.Module):
 def conv2D(
     in_num,
     out_num,
-    kernel_size=3, padding=1, stride=1, 
-    eps=1e-5, momentum=0.1,  
-    is_linear=False, 
-    is_batch=False
+    kernel_size=3,
+    padding=1,
+    stride=1,
+    eps=1e-5,
+    momentum=0.1,
+    is_linear=False,
+    is_batch=False,
 ):
-    
+
     if is_linear:
-        temp = nn.Sequential(nn.Conv2d(in_num, out_num, kernel_size=kernel_size, 
-                             padding=padding, stride=stride, bias=False))
+        temp = nn.Sequential(
+            nn.Conv2d(
+                in_num,
+                out_num,
+                kernel_size=kernel_size,
+                padding=padding,
+                stride=stride,
+                bias=False,
+            )
+        )
     else:
-        
+
         if is_batch:
             temp = nn.Sequential(
-                nn.Conv2d(in_num, out_num, kernel_size=kernel_size, 
-                          padding=padding, stride=stride, bias=False),
-                nn.BatchNorm1d(out_num, eps=eps, momentum=momentum),
-                nn.ReLU()
-                )
+                nn.Conv2d(
+                    in_num,
+                    out_num,
+                    kernel_size=kernel_size,
+                    padding=padding,
+                    stride=stride,
+                    bias=False,
+                ),
+                nn.BatchNorm2d(out_num, eps=eps, momentum=momentum),
+                nn.ReLU(),
+            )
         else:
             temp = nn.Sequential(
-                nn.Conv2d(in_num, out_num, kernel_size=kernel_size, 
-                          padding=padding, stride=stride, bias=False),
-                nn.ReLU()
-                )
+                nn.Conv2d(
+                    in_num,
+                    out_num,
+                    kernel_size=kernel_size,
+                    padding=padding,
+                    stride=stride,
+                    bias=False,
+                ),
+                nn.ReLU(),
+            )
 
     return temp
 
 
 class RESCONV2D(nn.Module):
-    
     def __init__(self, data):
         super(ResidualConv, self).__init__()
-        in_num = self.data['iSize']
-        blockNum = self.data['blockNum']
+        in_num = self.data["iSize"]
+        blockNum = self.data["blockNum"]
         mid_num = int(in_num / 2)
         self.layers = []
         self.blockNum = blockNum
         for i in range(blockNum):
             layers = []
-            layers.append(
-                conv2D(in_num, mid_num, kernel_size=1, padding=0)
-            )
-            layers.append(
-                conv2D(mid_num, in_num)
-            )
+            layers.append(conv2D(in_num, mid_num, kernel_size=1, padding=0))
+            layers.append(conv2D(mid_num, in_num))
             self.layers.append(layers)
 
     def forward(self, x):
-        
+
+        residual = x
+        for i in range(self.blockNum):
+            out = self.layers[i][0](x)
+            x = self.layers[i][1](out)
+            x += residual
+
+            residual = x
+
+        return x
+
+
+class RESCONV1D(nn.Module):
+    def __init__(self, data):
+        super(ResidualConv, self).__init__()
+        in_num = self.data["iSize"]
+        blockNum = self.data["blockNum"]
+        mid_num = int(in_num / 2)
+        self.layers = []
+        self.blockNum = blockNum
+        for i in range(blockNum):
+            layers = []
+            layers.append(conv1D(in_num, mid_num, kernel_size=1, padding=0))
+            layers.append(conv1D(mid_num, in_num))
+            self.layers.append(layers)
+
+    def forward(self, x):
+
         residual = x
         for i in range(self.blockNum):
             out = self.layers[i][0](x)
@@ -614,10 +664,10 @@ class Cat(nn.Module):
     """
     concat을 지원한다.
     """
-    
+
     def __init__(self, data):
         super(Cat, self).__init__()
-    
+
     def forward(self, x):
         return torch.cat(x, dim=-1)
 
@@ -626,30 +676,23 @@ class Unsequeeze(nn.Module):
     """
     unsequeeze를 지원
     """
-    
-    def __init__(
-        self,
-        data
-    ):
+
+    def __init__(self, data):
         super(Unsequeeze, self).__init__()
-        self.dim = data['dim']
+        self.dim = data["dim"]
 
     def forward(self, x):
         return torch.unsqueeze(x, dim=self.dim)
 
 
 class AvgPooling(nn.Module):
-
-    def __init__(
-        self,
-        data
-    ):
+    def __init__(self, data):
         super(AvgPooling, self).__init__()
-        stride = data['stride']
-        fSize = data['fSize']
-        padding = data['padding']
+        stride = data["stride"]
+        fSize = data["fSize"]
+        padding = data["padding"]
         self.layer = nn.AvgPool2d(fSize, stride=stride, padding=padding)
-    
+
     def forward(self, x):
         return self.layer(x)
 
@@ -658,50 +701,12 @@ class View(nn.Module):
     """
     view를 지원. 이때 view는 shape를 변환하는 것을 의미한다.
     """
-    def __init__(
-        self,
-        data
-    ):
+
+    def __init__(self, data):
         super(View, self).__init__()
-        self.shape = data['shape']
+        self.shape = data["shape"]
 
     def forward(self, x):
         if type(x) == tuple:
             x = x[0]
         return x.view(self.shape)
-
-
-class Res1D(nn.Module):
-
-    def __init__(
-        self,
-        aData
-    ):
-        super(Res1D, self).__init__()
-
-        self.aData = aData
-        self.iSize = self.aData['iSize']
-        self.nBlock = self.aData['nBlock']
-        self.isLinear = self.aData['linear']
-        
-        self.Model = self.buildModel()
-        self.conv = conv1D(1, self.iSize)
-    
-    def buildModel(self):
-        iSize = self.iSize
-        layers = []
-
-        for i in range(self.nBlock):
-            layers.append(ResidualConv(iSize))
-        
-        return nn.Sequential(*layers)
-
-    def forward(self, x):
-        
-        y = self.conv(x)
-        z = self.Model.forward(y)
-        if self.isLinear:
-            batchSize = z.shape[0]
-            z = z.view((batchSize, -1))
-        
-        return z

@@ -3,7 +3,20 @@ import numpy as np
 import json
 import torchvision.transforms.functional as TF
 
-from baseline.baseline.baseNetwork import MLP, CNET, LSTMNET, CNN1D, Res1D, Cat, Unsequeeze, View, CNNTP2D, GovAvgPooling, RESCONV2D, AvgPooling
+from baseline.baseline.baseNetwork import (
+    MLP,
+    CNET,
+    LSTMNET,
+    CNN1D,
+    Cat,
+    Unsequeeze,
+    View,
+    CNNTP2D,
+    GovAvgPooling,
+    RESCONV2D,
+    RESCONV1D,
+    AvgPooling,
+)
 
 
 """
@@ -19,7 +32,7 @@ def showLidarImg(img):
     img = torch.tensor(img).float()
     img = TF.to_pil_image(img)
     img.show()
-    
+
 
 def calGlobalNorm(agent):
     """
@@ -35,12 +48,12 @@ def calGlobalNorm(agent):
 def clipByGN(agent, maxNorm):
     totalNorm = calGlobalNorm(agent)
     for p in agent.parameters():
-        factor = maxNorm/np.maximum(totalNorm, maxNorm)
+        factor = maxNorm / np.maximum(totalNorm, maxNorm)
         p.grad *= factor
 
 
 def getOptim(optimData, agent, floatV=False):
-    
+
     """
     configuration에서 정의된 optimizer setting을 지원한다.
 
@@ -55,15 +68,15 @@ def getOptim(optimData, agent, floatV=False):
         floatV:[bool], weight이 torch.nn이 아니라 tensor인 경우
             
     """
-    
+
     keyList = list(optimData.keys())
 
-    if 'name' in keyList:
-        name = optimData['name']
-        lr = optimData['lr']
-        decay = 0 if 'decay' not in keyList else optimData['decay']
-        eps = 1e-5 if 'eps' not in keyList else optimData['eps']
-        
+    if "name" in keyList:
+        name = optimData["name"]
+        lr = optimData["lr"]
+        decay = 0 if "decay" not in keyList else optimData["decay"]
+        eps = 1e-5 if "eps" not in keyList else optimData["eps"]
+
         if floatV:
             inputD = agent
         elif type(agent) == tuple:
@@ -73,49 +86,37 @@ def getOptim(optimData, agent, floatV=False):
 
         else:
             inputD = agent.parameters()
-        if name == 'adam':
-            beta1 = 0.9 if 'beta1' not in keyList else optimData['beta1']
-            beta2 = 0.99 if 'beta2' not in keyList else optimData['beta2']
+        if name == "adam":
+            beta1 = 0.9 if "beta1" not in keyList else optimData["beta1"]
+            beta2 = 0.99 if "beta2" not in keyList else optimData["beta2"]
             optim = torch.optim.Adam(
-                inputD,
-                lr=lr,
-                weight_decay=decay,
-                eps=eps,
-                betas=(beta1, beta2)
-                )
-        if name == 'sgd':
-            momentum = 0 if 'momentum' not in keyList else optimData['momentum']
+                inputD, lr=lr, weight_decay=decay, eps=eps, betas=(beta1, beta2)
+            )
+        if name == "sgd":
+            momentum = 0 if "momentum" not in keyList else optimData["momentum"]
 
             optim = torch.optim.SGD(
-                inputD,
-                lr=lr,
-                weight_decay=decay,
-                momentum=momentum
+                inputD, lr=lr, weight_decay=decay, momentum=momentum
             )
-        if name == 'rmsprop':
-            optim = torch.optim.RMSprop(
-                inputD,
-                lr=lr,
-                weight_decay=decay,
-                eps=eps
-            )
-    
+        if name == "rmsprop":
+            optim = torch.optim.RMSprop(inputD, lr=lr, weight_decay=decay, eps=eps)
+
     return optim
 
 
 def getActivation(actName, **kwargs):
-    if actName == 'relu':
+    if actName == "relu":
         act = torch.nn.ReLU()
-    if actName == 'leakyRelu':
-        nSlope = 0.2 if 'slope' not in kwargs.keys() else kwargs['slope']
+    if actName == "leakyRelu":
+        nSlope = 0.2 if "slope" not in kwargs.keys() else kwargs["slope"]
         act = torch.nn.LeakyReLU(negative_slope=nSlope)
-    if actName == 'sigmoid':
+    if actName == "sigmoid":
         act = torch.nn.Sigmoid()
-    if actName == 'tanh':
+    if actName == "tanh":
         act = torch.nn.Tanh()
-    if actName == 'linear':
+    if actName == "linear":
         act = None
-    
+
     return act
 
 
@@ -126,29 +127,41 @@ def constructNet(netData):
     args:
         netData:dict
     """
-    netCat = netData['netCat']
-    if netCat == 'Input':
+    netCat = netData["netCat"]
+    if netCat == "Input":
         return None
-    Net = [MLP, CNET, LSTMNET, CNN1D, Res1D, Cat, Unsequeeze, View, CNNTP2D, GovAvgPooling, RESCONV2D, AvgPooling]
+    Net = [
+        MLP,
+        CNET,
+        LSTMNET,
+        CNN1D,
+        Cat,
+        Unsequeeze,
+        View,
+        CNNTP2D,
+        GovAvgPooling,
+        RESCONV2D,
+        RESCONV1D,
+        AvgPooling,
+    ]
     netName = [
         "MLP",
         "CNN2D",
         "LSTMNET",
         "CNN1D",
-        "Res1D",
         "Cat",
         "Unsequeeze",
         "View",
         "CNNTP2D",
         "GovAvgPooling",
         "RESCONV2D",
-        "AvgPooling"]
+        "RESCONV1D",
+        "AvgPooling",
+    ]
     ind = netName.index(netCat)
 
     baseNet = Net[ind]
-    network = baseNet(
-        netData
-    )
+    network = baseNet(netData)
 
     return network
 
@@ -180,7 +193,7 @@ class jsonParser:
         #     'entropyCoeff', 'epsilon', 'div', 'epoch',
         #     'updateOldP', 'initLogStd', 'finLogStd',
         #     'annealingStep', 'K1', 'K2', 'updateStep']
-        
+
         # values = [
         #     1, 1e6, False,
         #     -1, 0.99, 0.95, 1,
@@ -189,26 +202,27 @@ class jsonParser:
         #     1e6, 160, 10, 160
         # ]
         # self.jsonFile = setValue_dict(self.jsonFile, keys, values)
-    
+
     def loadParser(self):
         return self.jsonFile
-    
+
     def loadAgentParser(self):
-        agentData = self.jsonFile.get('agent')
-        agentData['sSize'] = self.jsonFile['sSize']
-        agentData['aSize'] = self.jsonFile['aSize']
-        agentData['device'] = self.jsonFile['device']
-        agentData['gamma'] = self.jsonFile['gamma']
+        agentData = self.jsonFile.get("agent")
+        agentData["sSize"] = self.jsonFile["sSize"]
+        agentData["aSize"] = self.jsonFile["aSize"]
+        agentData["device"] = self.jsonFile["device"]
+        agentData["gamma"] = self.jsonFile["gamma"]
         return agentData
-    
+
     def loadOptParser(self):
-        return self.jsonFile.get('optim')
+        return self.jsonFile.get("optim")
 
 
 class PidPolicy:
     """
     PID Policy를 위한 class
     """
+
     def __init__(self, parm):
         self.parm = parm
 
@@ -221,11 +235,11 @@ class PidPolicy:
         self.yaw = yaw
 
         e_s, e_yaw = self.calculate_e()
-        uv_pid = self.parm['Kp_lin'] * e_s
-        uw_pid = self.parm['Kp_ang'] * e_yaw
+        uv_pid = self.parm["Kp_lin"] * e_s
+        uw_pid = self.parm["Kp_ang"] * e_yaw
 
-        uv_pid = np.clip(uv_pid, self.parm['uv_min'], self.parm['uv_max'])
-        uw_pid = np.clip(uw_pid, self.parm['uw_min'], self.parm['uw_max'])
+        uv_pid = np.clip(uv_pid, self.parm["uv_min"], self.parm["uv_max"])
+        uw_pid = np.clip(uw_pid, self.parm["uw_min"], self.parm["uw_max"])
 
         return uv_pid, uw_pid
 
@@ -233,7 +247,9 @@ class PidPolicy:
         """
         Calculate longitudinal and lateral error for PID policy
         """
-        e_s = np.sqrt(np.power(self.dx, 2) + np.power(self.dy, 2)) * np.cos(np.arctan2(self.dy,self.dx) - self.yaw)
+        e_s = np.sqrt(np.power(self.dx, 2) + np.power(self.dy, 2)) * np.cos(
+            np.arctan2(self.dy, self.dx) - self.yaw
+        )
         yaw_ref = np.arctan2(self.dy, self.dx)
         e_yaw_ = yaw_ref - self.yaw
         e_yaw = np.arctan2(np.sin(e_yaw_), np.cos(e_yaw_))
