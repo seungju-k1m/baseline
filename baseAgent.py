@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from baseline.baseline.utils import constructNet
+from baseline.utils import constructNet
 
 
 class Node:
@@ -15,15 +15,13 @@ class Node:
 
         Also, node have priority used for controling the forwarding flow.
     """
-    def __init__(
-        self,
-        data: dict
-    ):
+
+    def __init__(self, data: dict):
         super(Node, self).__init__()
 
         self.previousNodes: list
         self.previousNodes = []
-        self.priority = data['prior']
+        self.priority = data["prior"]
         self.storedInput = []
         self.storedOutput = []
         self.data = data
@@ -79,26 +77,27 @@ class baseAgent(nn.Module):
 
             8. Forwarding
     """
-    def __init__(
-        self,
-        mData: dict,
-        LSTMName=None
-    ):
+
+    def __init__(self, mData: dict, LSTMName=None):
         super(baseAgent, self).__init__()
         # data
         self.mData = mData
 
         # name
         self.moduleNames = list(self.mData.keys())
-        
+
         # sorting the module layer
         self.moduleNames.sort()
 
-        self.priorityModel, self.outputModelName, self.inputModelName = self.buildModel()
+        (
+            self.priorityModel,
+            self.outputModelName,
+            self.inputModelName,
+        ) = self.buildModel()
         self.priority = list(self.priorityModel.keys())
         self.priority.sort()
         self.LSTMname = LSTMName
-        
+
     def buildModel(self) -> tuple:
         priorityModel = {}
         """
@@ -174,7 +173,7 @@ class baseAgent(nn.Module):
             layerDict = self.priorityModel[prior]
             for name in layerDict.keys():
                 listLayer.append(layerDict[name].model)
-        
+
         return tuple(listLayer)
 
     def updateParameter(self, Agent, tau) -> None:
@@ -202,16 +201,16 @@ class baseAgent(nn.Module):
                 for p in parameters:
                     norm = p.grad.data.norm(2)
                     totalNorm += norm
-        
+
         return totalNorm
-    
+
     def evalMode(self):
         for prior in self.priority:
             layerDict = self.priorityModel[prior]
             for name in layerDict.keys():
                 node = layerDict[name]
                 node.model.eval()
-    
+
     def trainMode(self):
         for prior in self.priority:
             layerDict = self.priorityModel[prior]
@@ -225,14 +224,14 @@ class baseAgent(nn.Module):
             layerDict = self.priorityModel[prior]
             for name in layerDict.keys():
                 inputD += list(layerDict[name].model.parameters())
-        
+
         torch.nn.utils.clip_grad_norm_(inputD, maxNorm)
-    
+
     def getCellState(self):
         if self.LSTMname is not None:
             prior = self.name2prior[self.LSTMname]
             return self.priorityModel[prior][self.LSTMname].model.getCellState()
-    
+
     def setCellState(self, cellstate):
         if self.LSTMname is not None:
             prior = self.name2prior[self.LSTMname]
@@ -242,12 +241,12 @@ class baseAgent(nn.Module):
         if self.LSTMname is not None:
             prior = self.name2prior[self.LSTMname]
             self.priorityModel[prior][self.LSTMname].model.zeroCellState()
-    
+
     def zeroCellStateAgent(self, idx):
         if self.LSTMname is not None:
             prior = self.name2prior[self.LSTMname]
             self.priorityModel[prior][self.LSTMname].model.zeroCellStateAgent(idx)
-    
+
     def detachCellState(self):
         if self.LSTMname is not None:
             prior = self.name2prior[self.LSTMname]

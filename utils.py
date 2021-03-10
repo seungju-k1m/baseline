@@ -3,7 +3,7 @@ import numpy as np
 import json
 import torchvision.transforms.functional as TF
 
-from baseline.baseline.baseNetwork import (
+from baseline.baseNetwork import (
     MLP,
     CNET,
     LSTMNET,

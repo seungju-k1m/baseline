@@ -635,7 +635,8 @@ class RESCONV2D(nn.Module):
 
 class RESCONV1D(nn.Module):
     def __init__(self, data):
-        super(ResidualConv, self).__init__()
+        super(RESCONV1D, self).__init__()
+        self.data = data
         in_num = self.data["iSize"]
         blockNum = self.data["blockNum"]
         mid_num = int(in_num / 2)
@@ -648,6 +649,8 @@ class RESCONV1D(nn.Module):
             self.layers.append(layers)
 
     def forward(self, x):
+        if type(x) == tuple:
+            x = x[0]
 
         residual = x
         for i in range(self.blockNum):
@@ -691,9 +694,11 @@ class AvgPooling(nn.Module):
         stride = data["stride"]
         fSize = data["fSize"]
         padding = data["padding"]
-        self.layer = nn.AvgPool2d(fSize, stride=stride, padding=padding)
+        self.layer = nn.AvgPool1d(fSize, stride=stride, padding=padding)
 
     def forward(self, x):
+        if type(x) == tuple:
+            x = x[0]
         return self.layer(x)
 
 
