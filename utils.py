@@ -1,8 +1,13 @@
-import torch
-import numpy as np
 import json
+import torch
+import random
+
+import numpy as np
+import _pickle as cPickle
 import torchvision.transforms.functional as TF
 
+from collections import deque
+from baseline.sumtree import SumTree
 from baseline.baseNetwork import (
     MLP,
     CNET,
@@ -22,16 +27,6 @@ from baseline.baseNetwork import (
 """
 utils의 경우, 다양한 상황에서 사용되는 기타 method이다.
 """
-
-
-def showLidarImg(img):
-    """
-    args:
-        img:np.array, [C, H, W]
-    """
-    img = torch.tensor(img).float()
-    img = TF.to_pil_image(img)
-    img.show()
 
 
 def calGlobalNorm(agent):
@@ -177,6 +172,14 @@ def setValue_dict(Dict, Keys, Values):
     return Dict
 
 
+def dumps(data):
+    return cPickle.dumps(data)
+
+
+def loads(packed):
+    return cPickle.loads(packed)
+
+
 class jsonParser:
     """
     configuration은 *.json 형태이기 때문에
@@ -218,39 +221,71 @@ class jsonParser:
         return self.jsonFile.get("optim")
 
 
-class PidPolicy:
-    """
-    PID Policy를 위한 class
-    """
+class CompressedDeque(deque):
+    def __init__(self, *args, **kargs):
+        super(CompressedDeque, self).__init__(*args, **kargs)
 
-    def __init__(self, parm):
-        self.parm = parm
+    def __iter__(self):
+        return (loads(v) for v in super(CompressedDeque, self).__iter__())
 
-    def pid_policy(self, dx, dy, yaw):
-        """
-        PID policy in safe situation
-        """
-        self.dx = dx
-        self.dy = dy
-        self.yaw = yaw
+    def append(self, data):
+        super(CompressedDeque, self).append(dumps(data))
 
-        e_s, e_yaw = self.calculate_e()
-        uv_pid = self.parm["Kp_lin"] * e_s
-        uw_pid = self.parm["Kp_ang"] * e_yaw
+    def extend(self, datum):
+        for d in datum:
+            self.append(d)
 
-        uv_pid = np.clip(uv_pid, self.parm["uv_min"], self.parm["uv_max"])
-        uw_pid = np.clip(uw_pid, self.parm["uw_min"], self.parm["uw_max"])
+    def __getitem__(self, idx):
+        return loads(super(CompressedDeque, self).__getitem__(idx))
 
-        return uv_pid, uw_pid
 
-    def calculate_e(self):
-        """
-        Calculate longitudinal and lateral error for PID policy
-        """
-        e_s = np.sqrt(np.power(self.dx, 2) + np.power(self.dy, 2)) * np.cos(
-            np.arctan2(self.dy, self.dx) - self.yaw
-        )
-        yaw_ref = np.arctan2(self.dy, self.dx)
-        e_yaw_ = yaw_ref - self.yaw
-        e_yaw = np.arctan2(np.sin(e_yaw_), np.cos(e_yaw_))
-        return e_s, e_yaw
+class ReplayMemory:
+    def __init__(self, capacity):
+        self.memory = CompressedDeque(capacity)
+
+    def push(self, data):
+        self.memory.append(data)
+
+    def sample(self, batch_size):
+        return random.sample(self.memory, batch_size)
+
+    def clear(self):
+        self.memory.clear()
+
+    def __getitem__(self, idx):
+        return self.memory[idx]
+
+    def __len__(self):
+        return len(self.memory)
+
+
+class PrioritizedMemory(object):
+    def __init__(self, capacity, use_compress=False):
+        self.capacity = capacity
+        self.transitions = CompressedDeque(None)
+        self.priorities = SumTree()
+
+    def push(self, transitions, priorities):
+        self.transitions.extend(transitions)
+        self.priorities.extend(priorities)
+
+    def sample(self, batch_size):
+        idxs, prios = self.priorities.prioritized_sample(batch_size)
+        return [self.transitions[i] for i in idxs], prios, idxs
+
+    def update_priorities(self, indices, priorities):
+        for idx, prio in zip(indices, priorities):
+            self.priorities[idx] = prio
+
+    def remove_to_fit(self):
+        if len(self.priorities) - self.capacity <= 0:
+            return
+        for _ in range(len(self.priorities) - self.capacity):
+            self.transitions.popleft()
+            self.priorities.popleft()
+
+    def __len__(self):
+        return len(self.transitions)
+
+    def total_prios(self):
+        return self.priorities.root.value
