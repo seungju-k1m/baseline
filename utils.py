@@ -73,7 +73,7 @@ def getOptim(optimData, agent, floatV=False):
         eps = 1e-5 if "eps" not in keyList else optimData["eps"]
 
         if floatV:
-            inputD = agent
+            inputD = [agent]
         elif type(agent) == tuple:
             inputD = []
             for a in agent:
@@ -262,7 +262,7 @@ class ReplayMemory:
 class PrioritizedMemory(object):
     def __init__(self, capacity, use_compress=False):
         self.capacity = capacity
-        self.transitions = CompressedDeque(None)
+        self.transitions = CompressedDeque()
         self.priorities = SumTree()
 
     def push(self, transitions, priorities):
