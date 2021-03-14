@@ -94,6 +94,7 @@ class baseAgent(nn.Module):
             self.outputModelName,
             self.inputModelName,
         ) = self.buildModel()
+        self.loadParameters()
         self.priority = list(self.priorityModel.keys())
         self.priority.sort()
         self.LSTMname = LSTMName
@@ -161,11 +162,12 @@ class baseAgent(nn.Module):
                         prevNodes.append(priorityModel[data["prior"]][name])
                     node.setPrevNodes(prevNodes)
         self.name2prior = name2prior
-
         return priorityModel, outputModelName, inputModelName
 
     def loadParameters(self) -> None:
-        pass
+        for prior, priorDict in self.priorityModel.items():
+            for name, module in priorDict.items():
+                setattr(self, name, module.model)
 
     def buildOptim(self) -> tuple:
         listLayer = []

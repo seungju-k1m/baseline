@@ -231,9 +231,9 @@ class CompressedDeque(deque):
     def append(self, data):
         super(CompressedDeque, self).append(dumps(data))
 
-    def extend(self, datum):
-        for d in datum:
-            self.append(d)
+    def extend(self, d):
+        # for d in datum:
+        self.append(d)
 
     def __getitem__(self, idx):
         return loads(super(CompressedDeque, self).__getitem__(idx))
@@ -241,7 +241,7 @@ class CompressedDeque(deque):
 
 class ReplayMemory:
     def __init__(self, capacity):
-        self.memory = CompressedDeque(capacity)
+        self.memory = CompressedDeque(maxlen=capacity)
 
     def push(self, data):
         self.memory.append(data)
