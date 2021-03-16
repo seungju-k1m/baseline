@@ -1,3 +1,4 @@
+import gc
 import json
 import torch
 import random
@@ -231,9 +232,13 @@ class CompressedDeque(deque):
     def append(self, data):
         super(CompressedDeque, self).append(dumps(data))
 
-    def extend(self, d):
+    def extend(self, d, priorMode=False):
         # for d in datum:
-        self.append(d)
+        if priorMode:
+            for _d in d:
+                self.append(_d)
+        else:
+            self.append(d)
 
     def __getitem__(self, idx):
         return loads(super(CompressedDeque, self).__getitem__(idx))
@@ -266,16 +271,18 @@ class PrioritizedMemory(object):
         self.priorities = SumTree()
 
     def push(self, transitions, priorities):
-        self.transitions.extend(transitions)
+        self.transitions.extend(transitions, priorMode=True)
         self.priorities.extend(priorities)
 
     def sample(self, batch_size):
         idxs, prios = self.priorities.prioritized_sample(batch_size)
+        gc.collect()
         return [self.transitions[i] for i in idxs], prios, idxs
 
     def update_priorities(self, indices, priorities):
         for idx, prio in zip(indices, priorities):
             self.priorities[idx] = prio
+        gc.collect()
 
     def remove_to_fit(self):
         if len(self.priorities) - self.capacity <= 0:
