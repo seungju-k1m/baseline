@@ -126,6 +126,7 @@ class SumTree(TreeQueue):
         super(SumTree, self).__init__(op=sum)
 
     def prioritized_sample(self, n):
+        # print(sys.getsizeof(self.root))
         assert n >= 0
         ixs = []
         vals = []

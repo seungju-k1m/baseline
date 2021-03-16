@@ -1,4 +1,5 @@
 import gc
+import sys
 import json
 import torch
 import random
@@ -273,16 +274,17 @@ class PrioritizedMemory(object):
     def push(self, transitions, priorities):
         self.transitions.extend(transitions, priorMode=True)
         self.priorities.extend(priorities)
+        # gc.collect()
 
     def sample(self, batch_size):
         idxs, prios = self.priorities.prioritized_sample(batch_size)
-        gc.collect()
+        # gc.collect()
         return [self.transitions[i] for i in idxs], prios, idxs
 
     def update_priorities(self, indices, priorities):
         for idx, prio in zip(indices, priorities):
             self.priorities[idx] = prio
-        gc.collect()
+        # gc.collect()
 
     def remove_to_fit(self):
         if len(self.priorities) - self.capacity <= 0:
