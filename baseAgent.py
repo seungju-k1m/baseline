@@ -83,7 +83,7 @@ class baseAgent(nn.Module):
             8. Forwarding
     """
 
-    def __init__(self, mData: dict, LSTMName=None):
+    def __init__(self, mData: dict):
         super(baseAgent, self).__init__()
         # data
         self.mData = mData
@@ -102,7 +102,7 @@ class baseAgent(nn.Module):
         self.loadParameters()
         self.priority = list(self.priorityModel.keys())
         self.priority.sort()
-        self.LSTMname = LSTMName
+        self.LSTMMODULENAME = []
 
     def buildModel(self) -> tuple:
         priorityModel = {}
@@ -134,6 +134,8 @@ class baseAgent(nn.Module):
 
         for name in self.moduleNames:
             data = self.mData[name]
+            if data["netCat"] == "LSTMNET":
+                self.LSTMMODULENAME.append(name)
             data: dict
             name2prior[name] = data["prior"]
             if data["prior"] in priorityModel.keys():
@@ -234,30 +236,30 @@ class baseAgent(nn.Module):
 
         torch.nn.utils.clip_grad_norm_(inputD, maxNorm)
 
-    def getCellState(self):
-        if self.LSTMname is not None:
-            prior = self.name2prior[self.LSTMname]
-            return self.priorityModel[prior][self.LSTMname].model.getCellState()
+    def getCellState(self, name=None):
+        if name is None:
+            name = self.LSTMMODULENAME[0]
 
-    def setCellState(self, cellstate):
-        if self.LSTMname is not None:
-            prior = self.name2prior[self.LSTMname]
-            self.priorityModel[prior][self.LSTMname].model.setCellState(cellstate)
+        prior = self.name2prior[self.LSTMname]
+        return self.priorityModel[prior][self.LSTMname].model.getCellState()
 
-    def zeroCellState(self):
-        if self.LSTMname is not None:
-            prior = self.name2prior[self.LSTMname]
-            self.priorityModel[prior][self.LSTMname].model.zeroCellState()
+    def setCellState(self, cellstate, name=None):
+        if name is None:
+            name = self.LSTMMODULENAME[0]
+        prior = self.name2prior[name]
+        self.priorityModel[prior][self.LSTMname].model.setCellState(cellstate)
 
-    def zeroCellStateAgent(self, idx):
-        if self.LSTMname is not None:
-            prior = self.name2prior[self.LSTMname]
-            self.priorityModel[prior][self.LSTMname].model.zeroCellStateAgent(idx)
+    def zeroCellState(self, name=None):
+        if name is None:
+            name = self.LSTMMODULENAME[0]
+        prior = self.name2prior[name]
+        self.priorityModel[prior][name].model.zeroCellState()
 
-    def detachCellState(self):
-        if self.LSTMname is not None:
-            prior = self.name2prior[self.LSTMname]
-            self.priorityModel[prior][self.LSTMname].model.detachCellState()
+    def detachCellState(self, name=None):
+        if name is None:
+            name = self.LSTMMODULENAME[0]
+        prior = self.name2prior[name]
+        self.priorityModel[prior][name].model.detachCellState()
 
     def to(self, device) -> None:
         for prior in self.priority:

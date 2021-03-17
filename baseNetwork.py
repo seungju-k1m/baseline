@@ -730,10 +730,12 @@ class LSTM(nn.Module):
         # state, (hx, cx)
         if len(state) == 2:
             state, (hx, cx) = state
+            output, (hn, cn) = self.rnn(state, (hx, cx))
         else:
             state = state[0]
+            output, (hn, cn) = self.rnn(state)
 
-        output, (hn, cn) = self.rnn(state, (hx, cx))
+        
         return output, (hn, cn)
 
 
