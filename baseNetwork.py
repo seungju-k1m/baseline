@@ -715,3 +715,37 @@ class View(nn.Module):
         if type(x) == tuple:
             x = x[0]
         return x.view(self.shape)
+
+
+class LSTM(nn.Module):
+    def __init__(self, netData):
+        super(LSTM, self).__init__()
+        self.netData = netData
+        self.hiddenSize = netData["hiddenSize"]
+        iSize = netData["iSize"]
+        nLayer = netData["nLayer"] if "nLayer" in self.netData.keys() else 1
+        self.rnn = nn.LSTM(iSize, self.hiddenSize, nLayer)
+
+    def forward(self, state):
+        # state, (hx, cx)
+        if len(state) == 2:
+            state, (hx, cx) = state
+        else:
+            state = state[0]
+
+        output, (hn, cn) = self.rnn(state, (hx, cx))
+        return output, (hn, cn)
+
+
+class Select(nn.Module):
+    def __init__(self, netData):
+        super(Select, self).__init__()
+        self.netData = netData
+        self.num = self.netData["num"]
+
+    def forward(self, state):
+        if type(state) == tuple:
+            state = state[0]
+            if type(state) == tuple:
+                state = state[self.num]
+        return state

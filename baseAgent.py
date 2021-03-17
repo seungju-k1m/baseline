@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+
+from copy import deepcopy
 from baseline.utils import constructNet
 
 
@@ -39,7 +41,11 @@ class Node:
         self.storedOutput.clear()
 
     def addInput(self, _input) -> None:
-        self.storedInput.append(_input.clone())
+        if type(_input) == tuple:
+            # this is for hidden states of LSTM
+            self.storedInput.append(deepcopy(_input))
+        else:
+            self.storedInput.append(_input.clone())
 
     def getStoreOutput(self):
         return self.storedOutput
@@ -49,7 +55,6 @@ class Node:
             for prevNode in self.previousNodes:
                 for prevInput in prevNode.storedOutput:
                     self.storedInput.append(prevInput)
-
         storedInput = tuple(self.storedInput)
         output = self.model.forward(storedInput)
         self.storedOutput.append(output)

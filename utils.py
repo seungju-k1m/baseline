@@ -23,6 +23,8 @@ from baseline.baseNetwork import (
     RESCONV2D,
     RESCONV1D,
     AvgPooling,
+    LSTM,
+    Select
 )
 
 
@@ -140,6 +142,8 @@ def constructNet(netData):
         RESCONV2D,
         RESCONV1D,
         AvgPooling,
+        LSTM,
+        Select
     ]
     netName = [
         "MLP",
@@ -154,6 +158,8 @@ def constructNet(netData):
         "RESCONV2D",
         "RESCONV1D",
         "AvgPooling",
+        "LSTM",
+        "Select"
     ]
     ind = netName.index(netCat)
 
