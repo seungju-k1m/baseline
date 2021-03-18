@@ -91,6 +91,7 @@ class baseAgent(nn.Module):
         # name
         self.moduleNames = list(self.mData.keys())
 
+        self.LSTMMODULENAME = []
         # sorting the module layer
         self.moduleNames.sort()
 
@@ -102,7 +103,7 @@ class baseAgent(nn.Module):
         self.loadParameters()
         self.priority = list(self.priorityModel.keys())
         self.priority.sort()
-        self.LSTMMODULENAME = []
+        
 
     def buildModel(self) -> tuple:
         priorityModel = {}
@@ -134,7 +135,7 @@ class baseAgent(nn.Module):
 
         for name in self.moduleNames:
             data = self.mData[name]
-            if data["netCat"] == "LSTM":
+            if data["netCat"] == "LSTMNET":
                 self.LSTMMODULENAME.append(name)
             data: dict
             name2prior[name] = data["prior"]
