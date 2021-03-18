@@ -134,7 +134,7 @@ class baseAgent(nn.Module):
 
         for name in self.moduleNames:
             data = self.mData[name]
-            if data["netCat"] == "LSTMNET":
+            if data["netCat"] == "LSTM":
                 self.LSTMMODULENAME.append(name)
             data: dict
             name2prior[name] = data["prior"]
@@ -240,14 +240,14 @@ class baseAgent(nn.Module):
         if name is None:
             name = self.LSTMMODULENAME[0]
 
-        prior = self.name2prior[self.LSTMname]
-        return self.priorityModel[prior][self.LSTMname].model.getCellState()
+        prior = self.name2prior[name]
+        return self.priorityModel[prior][name].model.getCellState()
 
     def setCellState(self, cellstate, name=None):
         if name is None:
             name = self.LSTMMODULENAME[0]
         prior = self.name2prior[name]
-        self.priorityModel[prior][self.LSTMname].model.setCellState(cellstate)
+        self.priorityModel[prior][name].model.setCellState(cellstate)
 
     def zeroCellState(self, name=None):
         if name is None:
@@ -267,11 +267,6 @@ class baseAgent(nn.Module):
             for name in layerDict.keys():
                 node = layerDict[name]
                 node.model.to(device)
-
-    def clear(self, index, step=0):
-        if self.LSTMname is not None:
-            prior = self.name2prior[self.LSTMname]
-            self.priorityModel[prior][self.LSTMname].clear(index, step)
 
     def clear_savedOutput(self):
         for i in self.priority:

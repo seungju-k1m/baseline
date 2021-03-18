@@ -296,7 +296,7 @@ class LSTMNET(nn.Module):
         iSize = netData["iSize"]
         device = netData["device"]
         self.device = torch.device(device)
-        self.nAgent = self.netData["Number_Agent"]
+        self.nAgent = self.netData["Number_Agent"] if "Number_Agent" in self.netData.keys() else 1
         self.CellState = (
             torch.zeros(1, self.nAgent, self.hiddenSize).to(self.device),
             torch.zeros(1, self.nAgent, self.hiddenSize).to(self.device),
@@ -358,8 +358,9 @@ class LSTMNET(nn.Module):
         self.CellState[1][0, idx] = c
 
     def forward(self, state):
-        if type(state) == tuple:
-            state = state[0]
+        state = state[0]
+        if len(state) == 2:
+            self.setCellState(state[1])
         nDim = state.shape[0]
         if nDim == 1:
             output, (hn, cn) = self.rnn(state, self.CellState)
