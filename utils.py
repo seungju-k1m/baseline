@@ -24,7 +24,7 @@ from baseline.baseNetwork import (
     RESCONV1D,
     AvgPooling,
     LSTM,
-    Select
+    Select,
 )
 
 
@@ -98,7 +98,10 @@ def getOptim(optimData, agent, floatV=False):
                 inputD, lr=lr, weight_decay=decay, momentum=momentum
             )
         if name == "rmsprop":
-            optim = torch.optim.RMSprop(inputD, lr=lr, weight_decay=decay, eps=eps)
+            momentum = 0 if "momentum" not in keyList else optimData["momentum"]
+            optim = torch.optim.RMSprop(
+                inputD, lr=lr, weight_decay=decay, eps=eps, momentum=momentum
+            )
 
     return optim
 
@@ -143,7 +146,7 @@ def constructNet(netData):
         RESCONV1D,
         AvgPooling,
         LSTM,
-        Select
+        Select,
     ]
     netName = [
         "MLP",
@@ -159,7 +162,7 @@ def constructNet(netData):
         "RESCONV1D",
         "AvgPooling",
         "LSTM",
-        "Select"
+        "Select",
     ]
     ind = netName.index(netCat)
 
@@ -259,7 +262,11 @@ class ReplayMemory:
         self.memory.append(data)
 
     def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
+        datas = random.sample(self.memory, batch_size)
+        # data = []
+        # for d in datas:
+        #     data.append(loads(d))
+        return datas
 
     def clear(self):
         self.memory.clear()
@@ -304,3 +311,64 @@ class PrioritizedMemory(object):
 
     def total_prios(self):
         return self.priorities.root.value
+
+
+class INFO:
+    def __init__(self):
+        self.info = """
+    Configuration for this experiment
+    """
+
+    def __add__(self, string):
+        self.info += string
+        return self
+
+    def __str__(self):
+        return self.info
+
+
+def writeDict(info, data, key, n=0):
+    tab = ""
+    for _ in range(n):
+        tab += "\t"
+    if type(data) == dict:
+        for k in data.keys():
+            dK = data[k]
+            if type(dK) == dict:
+                info += """
+        {}{}:
+            """.format(
+                    tab, k
+                )
+                writeDict(info, dK, k, n=n + 1)
+            else:
+                info += """
+        {}{}:{}
+        """.format(
+                    tab, k, dK
+                )
+    else:
+        info += """
+        {}:{}
+        """.format(
+            key, data
+        )
+
+
+def writeTrainInfo(datas):
+    info = INFO()
+    key = datas.keys()
+    for k in key:
+        data = datas[k]
+        if type(data) == dict:
+            info += """
+        {}:
+        """.format(
+                k
+            )
+
+            writeDict(info, data, k, n=1)
+        else:
+            writeDict(info, data, k)
+
+    return info
