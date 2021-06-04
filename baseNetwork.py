@@ -320,6 +320,7 @@ class LSTMNET(nn.Module):
             dtype:tuple, (hstate, cstate)
             state:torch.tensor, shape:[1, Agent의 숫자, hiddenSize]
         """
+        # clone한 torch 역시 backward에 기여된다.
         return (self.CellState[0].clone(), self.CellState[1].clone())
 
     def setCellState(self, cellState):
@@ -338,14 +339,14 @@ class LSTMNET(nn.Module):
             self.CellState[1].clone().detach(),
         )
 
-    def zeroCellState(self):
+    def zeroCellState(self, num=1):
         """
         cellState를 zero로 변환하는 과정이다.
         환경이 초기화 되면, lstm역시 초기화 되어야한다.
         """
         self.CellState = (
-            torch.zeros(1, self.nAgent, self.hiddenSize).to(self.device),
-            torch.zeros(1, self.nAgent, self.hiddenSize).to(self.device),
+            torch.zeros(1, num, self.hiddenSize).to(self.device),
+            torch.zeros(1, num, self.hiddenSize).to(self.device),
         )
 
     def zeroCellStateAgent(self, idx):

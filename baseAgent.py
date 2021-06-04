@@ -250,11 +250,11 @@ class baseAgent(nn.Module):
         prior = self.name2prior[name]
         self.priorityModel[prior][name].model.setCellState(cellstate)
 
-    def zeroCellState(self, name=None):
+    def zeroCellState(self, num=1, name=None):
         if name is None:
             name = self.LSTMMODULENAME[0]
         prior = self.name2prior[name]
-        self.priorityModel[prior][name].model.zeroCellState()
+        self.priorityModel[prior][name].model.zeroCellState(num)
 
     def detachCellState(self, name=None):
         if name is None:
