@@ -236,6 +236,14 @@ class baseAgent(nn.Module):
                 inputD += list(layerDict[name].model.parameters())
 
         torch.nn.utils.clip_grad_norm_(inputD, maxNorm)
+    
+    def getParameters(self):
+        inputD = []
+        for prior in self.priority:
+            layerDict = self.priorityModel[prior]
+            for name in layerDict.keys():
+                inputD += list(layerDict[name].model.parameters())
+        return inputD
 
     def getCellState(self, name=None):
         if name is None:
