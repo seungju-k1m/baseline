@@ -3,6 +3,7 @@ import sys
 import json
 import torch
 import random
+import logging
 
 import numpy as np
 import _pickle as cPickle
@@ -51,8 +52,22 @@ def clipByGN(agent, maxNorm):
         p.grad *= factor
 
 
-def getOptim(optimData, agent, floatV=False):
+def setup_logger(name, log_file, level=logging.INFO):
+    """To setup as many loggers as you want"""
 
+    handler = logging.FileHandler(log_file, mode='a')
+    stream = logging.StreamHandler()
+    # handler.setFormatter(formatter)
+
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    logger.addHandler(handler)
+    logger.addHandler(stream)
+
+    return logger
+
+
+def getOptim(optimData, agent, floatV=False):
     """
     configuration에서 정의된 optimizer setting을 지원한다.
 
@@ -65,7 +80,7 @@ def getOptim(optimData, agent, floatV=False):
             clipping:deprecated
         agent:[tuple, torch.nn], 해당 optimizer가 담당하는 weight들 Agentv1.buildOptim을 통해서 호출
         floatV:[bool], weight이 torch.nn이 아니라 tensor인 경우
-            
+
     """
 
     keyList = list(optimData.keys())
@@ -89,7 +104,8 @@ def getOptim(optimData, agent, floatV=False):
             beta1 = 0.9 if "beta1" not in keyList else optimData["beta1"]
             beta2 = 0.99 if "beta2" not in keyList else optimData["beta2"]
             optim = torch.optim.Adam(
-                inputD, lr=lr, weight_decay=decay, eps=eps, betas=(beta1, beta2)
+                inputD, lr=lr, weight_decay=decay, eps=eps, betas=(
+                    beta1, beta2)
             )
         if name == "sgd":
             momentum = 0 if "momentum" not in keyList else optimData["momentum"]
@@ -125,7 +141,7 @@ def getActivation(actName, **kwargs):
 def constructNet(netData):
     """
     configuration에 따라 해당 network를 반환
-    
+
     args:
         netData:dict
     """
