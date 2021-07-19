@@ -59,17 +59,25 @@ class MLP(nn.Module):
             act = [act for i in range(self.nLayer)]
         self.act = act
         self.BN = netData["BN"]
+        if self.BN:
+            self.BN = [self.BN for _ in range(self.nLayer - 1)]
+            self.BN.append(False)
         self.iSize = netData["iSize"]
+        if "bias" in list(netData.keys()):
+            self.bias = netData['bias']
+        else:
+            self.bias = False
         self.buildModel()
 
     def buildModel(self):
         iSize = self.iSize
         for i in range(self.nLayer):
             self.add_module(
-                "MLP_" + str(i + 1), nn.Linear(iSize, self.fSize[i], bias=False)
+                "MLP_" + str(i + 1), nn.Linear(iSize,
+                                               self.fSize[i], bias=self.bias)
             )
 
-            if self.BN:
+            if self.BN[i]:
                 self.add_module(
                     "batchNorm_" + str(i + 1), nn.BatchNorm1d(self.fSize[i])
                 )
@@ -296,7 +304,8 @@ class LSTMNET(nn.Module):
         iSize = netData["iSize"]
         device = netData["device"]
         self.device = torch.device(device)
-        self.nAgent = self.netData["Number_Agent"] if "Number_Agent" in self.netData.keys() else 1
+        self.nAgent = self.netData["Number_Agent"] if "Number_Agent" in self.netData.keys(
+        ) else 1
         self.CellState = (
             torch.zeros(1, self.nAgent, self.hiddenSize).to(self.device),
             torch.zeros(1, self.nAgent, self.hiddenSize).to(self.device),
@@ -737,7 +746,6 @@ class LSTM(nn.Module):
             state = state[0]
             output, (hn, cn) = self.rnn(state)
 
-        
         return output, (hn, cn)
 
 
