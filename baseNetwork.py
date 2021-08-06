@@ -691,6 +691,18 @@ class Cat(nn.Module):
         return torch.cat(x, dim=-1)
 
 
+class Permute(nn.Module):
+    def __init__(self, data):
+        super(Permute, self).__init__()
+        self.permute = data['permute']
+
+    def forward(self, x):
+        if isinstance(x, torch.tensor):
+            pass
+        else:
+            x = x[0]
+        return x.permute(self.permute).contiguous()
+
 class Unsequeeze(nn.Module):
     """
     unsequeeze를 지원
