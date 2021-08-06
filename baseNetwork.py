@@ -315,7 +315,7 @@ class LSTMNET(nn.Module):
         try:
             self.return_hidden = netData['return_hidden']
         except:
-            self,.return_hidden = False
+            self.return_hidden = False
 
     def clear(self, index, step=0):
         """
