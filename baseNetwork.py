@@ -387,9 +387,10 @@ class LSTMNET(nn.Module):
                 output = output.view(-1, self.hiddenSize)
                 output = output.view(-1, self.hiddenSize)
             self.CellState = (hn, cn)
-
-        # output consists of output, hidden, cell state
-        return output
+        if self.return_hidden:
+            return hn
+        else:
+            return output
 
 
 class CNN1D(nn.Module):
