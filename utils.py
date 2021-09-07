@@ -282,10 +282,10 @@ class ReplayMemory:
 
     def sample(self, batch_size):
         datas = random.sample(self.memory, batch_size)
-        # data = []
-        # for d in datas:
-        #     data.append(loads(d))
-        return datas
+        data = []
+        for d in datas:
+            data.append(loads(d))
+        return data
 
     def clear(self):
         self.memory.clear()
