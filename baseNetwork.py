@@ -58,9 +58,10 @@ class MLP(nn.Module):
         if not isinstance(act, list):
             act = [act for i in range(self.nLayer)]
         self.act = act
-        self.BN = netData["BN"]
-        if self.BN:
-            self.BN = [self.BN for _ in range(self.nLayer - 1)]
+        try:
+            self.BN = netData["BN"]
+        except:
+            self.BN = [False for _ in range(self.nLayer - 1)]
             self.BN.append(False)
         self.iSize = netData["iSize"]
         if "bias" in list(netData.keys()):
