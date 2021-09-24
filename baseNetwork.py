@@ -313,6 +313,10 @@ class LSTMNET(nn.Module):
         )
         self.rnn = nn.LSTM(iSize, self.hiddenSize, self.nLayer)
         self.FlattenMode = netData["FlattenMode"]
+        try:
+            self.return_hidden = netData['return_hidden']
+        except:
+            self.return_hidden = False
 
     def clear(self, index, step=0):
         """
@@ -384,6 +388,9 @@ class LSTMNET(nn.Module):
                 output = output.view(-1, self.hiddenSize)
                 output = output.view(-1, self.hiddenSize)
             self.CellState = (hn, cn)
+        
+        if self.return_hidden:
+            output = output[-1:, :, :]
 
         # output consists of output, hidden, cell state
         return output
