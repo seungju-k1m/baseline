@@ -762,3 +762,16 @@ class Select(nn.Module):
             if type(state) == tuple:
                 state = state[self.num]
         return state
+
+
+class Permute(nn.Module):
+    def __init__(self, netData):
+        super(Permute, self).__init__()
+        self.netData = netData
+        self.permute = self.netData['permute']
+
+    def forward(self, state):
+        if type(state) == tuple:
+            state = state[0]
+        state = state.permute(self.permute).contiguous()
+        return state
