@@ -26,7 +26,10 @@ from baseline.baseNetwork import (
     AvgPooling,
     LSTM,
     Select,
-    Permute
+    Permute,
+    GRU,
+    Attention,
+    Stack
 )
 
 
@@ -164,7 +167,10 @@ def constructNet(netData):
         AvgPooling,
         LSTM,
         Select,
-        Permute
+        Permute,
+        GRU,
+        Attention,
+        Stack
     ]
     netName = [
         "MLP",
@@ -181,7 +187,10 @@ def constructNet(netData):
         "AvgPooling",
         "LSTM",
         "Select",
-        "Permute"
+        "Permute",
+        "GRU",
+        "Attention",
+        "Stack"
     ]
     ind = netName.index(netCat)
 

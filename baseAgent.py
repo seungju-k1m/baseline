@@ -135,7 +135,7 @@ class baseAgent(nn.Module):
 
         for name in self.moduleNames:
             data = self.mData[name]
-            if data["netCat"] == "LSTMNET":
+            if data["netCat"] == "LSTMNET" or data['netCat'] == "GRU":
                 self.LSTMMODULENAME.append(name)
             data: dict
             name2prior[name] = data["prior"]

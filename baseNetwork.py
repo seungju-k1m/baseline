@@ -396,6 +396,173 @@ class LSTMNET(nn.Module):
         return output
 
 
+class GRU(nn.Module):
+    """
+    LSTMNET class는 LSTM을 지원한다.
+    LSTM는 다음을 통해 설정할 수 있다.
+    configuration:
+        args:
+            iSize:[int], input의 형태
+            nLayer:[int], layer의 갯수, 현재 1밖에 지원안함!
+            hiddenSize:[int], cell state의 크기
+            Number_Agent:[int], 현재 환경에서 돌아가는 agent의 수
+            FlattenMode:[bool], lstm의 output은 <seq, batch, hidden>를 
+                                                <seq*batch, hidden>로 변환
+    """
+
+    def __init__(self, netData):
+        super(GRU, self).__init__()
+        self.netData = netData
+        self.hiddenSize = netData["hiddenSize"]
+        self.nLayer = netData["nLayer"]
+        iSize = netData["iSize"]
+        device = netData["device"]
+        self.device = torch.device(device)
+        use_init_parameter = self.netData['use_init_parameter'] if "use_init_parameter" in self.netData.keys() else False
+
+        if use_init_parameter:
+            a = torch.randn((1, 1, self.hiddenSize)).to(self.device)
+            a.data.uniform_(
+                -0.08,
+                0.08
+            )
+            self.init_CellState = nn.Parameter(
+                a
+            )
+            self.CellState = self.init_CellState.data
+        else:
+            self.init_CellState = torch.zeros((1, 1, self.hiddenSize)).to(self.device)
+        
+            self.CellState = self.init_CellState
+
+        self.rnn = nn.GRU(iSize, self.hiddenSize, self.nLayer)
+        self.FlattenMode = netData["FlattenMode"]
+        try:
+            self.return_hidden = netData['return_hidden']
+        except:
+            self.return_hidden = False
+
+    def getCellState(self):
+        """
+        CellState을 반환한다.
+        output:
+            dtype:tuple, (hstate, cstate)
+            state:torch.tensor, shape:[1, Agent의 숫자, hiddenSize]
+        """
+        # clone한 torch 역시 backward에 기여된다.
+        return self.CellState
+
+    def setCellState(self, cellState):
+        """
+        CellState를 설정한다.
+        args:
+            cellState:tuple, (hstate, cstate)
+            state:torch.tensor, shape:[1, Agent의 숫자, hiddenSize]
+        """
+        self.CellState = cellState
+
+    def detachCellState(self):
+        "GRU의 BTTT를 지원하기 위해서는 detaching이 필요하다."
+        self.CellState = self.CellState.clone().detach()
+
+    def zeroCellState(self, num=1):
+        """
+        cellState를 zero로 변환하는 과정이다.
+        환경이 초기화 되면, lstm역시 초기화 되어야한다.
+        """
+        self.CellState = self.init_CellState.data
+
+    def forward(self, state):
+        state = state[0]
+        if len(state) == 2:
+            self.setCellState(state[1])
+        nDim = state.shape[0]
+        if nDim == 1:
+            output, hn = self.rnn(state, self.CellState)
+            if self.FlattenMode:
+                output = torch.squeeze(output, dim=0)
+            self.CellState = hn
+        else:
+            output, hn = self.rnn(state, self.CellState)
+            if self.FlattenMode:
+                output = output.view(-1, self.hiddenSize)
+                output = output.view(-1, self.hiddenSize)
+            self.CellState = hn
+        
+        if self.return_hidden:
+            output = output[-1:, :, :]
+
+        # output consists of output, hidden, cell state
+        return output
+
+
+class Attention(nn.Module):
+    """
+    Args:
+        iSize[int]: dimension of state
+        fSize[int]: dimension of weight
+        use_bias[Bool]: use bias
+        activation[str]: activation
+        device[str]: which device?
+    """
+    def __init__(self, netData:dict):
+        super(Attention, self).__init__()
+        self.iSize = netData['iSize']
+        self.fSize = netData['fSize']
+        key = list(netData.keys())
+        self.use_bias = netData['use_bias'] if 'use_bias' in key else False
+        self.activation = netData['activation'] if 'activation' in key else 'tanh'
+        self.activation = getActivation(self.activation)
+        self.device = torch.device(netData['device']) if 'device' in key else torch.device("cpu")
+        self.build_model()
+
+    def build_model(self):
+        attention_weight = torch.randn(
+            self.iSize,
+            self.fSize
+        ).to(self.device)
+        attention_weight.data.uniform_(
+            -0.08,
+            0.08
+        )
+        self.attention_weight = nn.Parameter(
+            attention_weight
+        )
+
+        attention_weight_sum = torch.randn(
+            self.fSize
+        ).to(self.device)
+        attention_weight_sum.data.uniform_(
+            -0.08,
+            0.08
+        )
+        self.attention_weight_sum = nn.Parameter(
+            attention_weight_sum
+        )
+
+    def forward(self, x):
+        if type(x) == tuple:
+            state = x[0]
+        # BATCH, SEQ, DIM
+        embedding = torch.matmul(
+            state, self.attention_weight
+        )
+        embedding = self.activation.forward(embedding)
+
+        embedding_score = torch.matmul(
+            embedding, self.attention_weight_sum
+        )
+        # BATCH, SEQ
+        embedding_score = torch.exp(embedding_score)
+        sum_attention = torch.sum(embedding_score, dim=-1).view((-1, 1))
+        attention_score = embedding_score / (sum_attention+1e-5)
+        attention_score = torch.unsqueeze(attention_score, dim=-1)
+        neighbor_state = embedding * attention_score
+        neighbor_state = torch.sum(neighbor_state, dim=1)
+        # BATCH, HIDDEN
+        return neighbor_state
+
+
 class CNN1D(nn.Module):
     """
     CNN1D class는 CNN1D을 지원한다.
@@ -694,6 +861,14 @@ class Cat(nn.Module):
         return torch.cat(x, dim=-1)
 
 
+class Stack(nn.Module):
+    def __init__(self, data):
+        super(Stack, self).__init__()
+        self.dim = data['dim']
+    def forward(self, x):
+        return torch.stack(x, dim=self.dim)
+
+
 class Unsequeeze(nn.Module):
     """
     unsequeeze를 지원
@@ -704,6 +879,8 @@ class Unsequeeze(nn.Module):
         self.dim = data["dim"]
 
     def forward(self, x):
+        if type(x) == tuple:
+            x = x[0]
         return torch.unsqueeze(x, dim=self.dim)
 
 
