@@ -426,9 +426,7 @@ class GRU(nn.Module):
                 -0.08,
                 0.08
             )
-            self.init_CellState = nn.Parameter(
-                a
-            )
+            self.init_CellState = a
             self.CellState = self.init_CellState.data
         else:
             self.init_CellState = torch.zeros((1, 1, self.hiddenSize)).to(self.device)
@@ -490,7 +488,10 @@ class GRU(nn.Module):
             self.CellState = hn
         
         if self.return_hidden:
-            output = output[-1:, :, :]
+            if output.shape[0] == 1:
+                pass
+            else:
+                output = output[-1:, :, :]
 
         # output consists of output, hidden, cell state
         return output
@@ -876,12 +877,17 @@ class Unsequeeze(nn.Module):
 
     def __init__(self, data):
         super(Unsequeeze, self).__init__()
+        key = list(data.keys())
         self.dim = data["dim"]
+        self.max_dim = data["max_dim"] if 'max_dim' in key else 1000
 
     def forward(self, x):
         if type(x) == tuple:
             x = x[0]
-        return torch.unsqueeze(x, dim=self.dim)
+        if len(x.shape) < self.max_dim:
+            return torch.unsqueeze(x, dim=self.dim)
+        else:
+            return x
 
 
 class AvgPooling(nn.Module):
