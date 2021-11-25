@@ -965,3 +965,21 @@ class Permute(nn.Module):
             state = state[0]
         state = state.permute(self.permute).contiguous()
         return state
+    
+
+class Subtrack(nn.Module):
+    def __init__(self, netData):
+        super(Subtrack, self).__init__()
+        pass
+
+    def forward(self, state):
+        return state[0] - state[1]
+
+
+class Add(nn.Module):
+    def __init__(self, netData):
+        super(Add, self).__init__()
+        pass
+
+    def forward(self, state):
+        return state[0] + state[1]

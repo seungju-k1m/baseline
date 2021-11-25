@@ -29,7 +29,9 @@ from baseline.baseNetwork import (
     Permute,
     GRU,
     Attention,
-    Stack
+    Stack,
+    Subtrack,
+    Add
 )
 
 
@@ -170,7 +172,9 @@ def constructNet(netData):
         Permute,
         GRU,
         Attention,
-        Stack
+        Stack,
+        Subtrack,
+        Add
     ]
     netName = [
         "MLP",
@@ -190,7 +194,9 @@ def constructNet(netData):
         "Permute",
         "GRU",
         "Attention",
-        "Stack"
+        "Stack",
+        "Substract",
+        'Add'
     ]
     ind = netName.index(netCat)
 
