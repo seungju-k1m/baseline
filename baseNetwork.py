@@ -983,3 +983,12 @@ class Add(nn.Module):
 
     def forward(self, state):
         return state[0] + state[1]
+    
+
+class Mean(nn.Module):
+    def __init__(self, netData):
+        super(Add, self).__init__()
+        pass
+
+    def forward(self, state):
+        return state[0].mean(dim=-1, keepdim=True)

@@ -31,7 +31,8 @@ from baseline.baseNetwork import (
     Attention,
     Stack,
     Subtrack,
-    Add
+    Add,
+    Mean
 )
 
 
@@ -174,7 +175,8 @@ def constructNet(netData):
         Attention,
         Stack,
         Subtrack,
-        Add
+        Add,
+        Mean
     ]
     netName = [
         "MLP",
@@ -196,7 +198,8 @@ def constructNet(netData):
         "Attention",
         "Stack",
         "Substract",
-        'Add'
+        'Add',
+        "Mean"
     ]
     ind = netName.index(netCat)
 
