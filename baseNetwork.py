@@ -987,7 +987,7 @@ class Add(nn.Module):
 
 class Mean(nn.Module):
     def __init__(self, netData):
-        super(Add, self).__init__()
+        super(Mean, self).__init__()
         pass
 
     def forward(self, state):
