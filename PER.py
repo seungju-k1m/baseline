@@ -96,12 +96,13 @@ class PER:
 
         prob = self.priority.prior / np.sum(self.priority.prior)
 
-    
-        if sum(prob) != 1.0:
-            print("WRONG")
-            print(sum(prob))
         a = [i for i in range(len(prob))]
-        idx = np.random.choice(a, batch_size, p=prob)
+        try:
+            idx = np.random.choice(a, batch_size, p=prob)
+        except ValueError:
+            print("Probability is WRONG?")
+            print(sum(prob))
+            idx = np.random.choice(a, batch_size)
         bin_data =[self.memory[id] for id in idx]
         s_prob = prob[idx]
         return list(bin_data), s_prob, idx
