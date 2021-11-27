@@ -90,9 +90,16 @@ class PER:
         self.priority.update(idx, vals, delta_frame)
         
     def sample(self, batch_size):
-        if len(self.priority.prior) > self.maxlen:
+        if len(self.priority.prior) > self.maxlen or min(self.priority.prior) < 0:
             print("WRONG")
+            print(min(self.priority.prior))
+
         prob = self.priority.prior / np.sum(self.priority.prior)
+
+    
+        if sum(prob) != 1.0:
+            print("WRONG")
+            print(sum(prob))
         a = [i for i in range(len(prob))]
         idx = np.random.choice(a, batch_size, p=prob)
         bin_data =[self.memory[id] for id in idx]
