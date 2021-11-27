@@ -24,11 +24,20 @@ class Tree:
     def update_max_value(self, value):
         self.max_value = value
     
-    def update(self, idx:list, vals:np.ndarray):
-        max_value = max(vals)
-        if max_value > self.max_value:
-            self.max_value = max_value
-        self.prior[idx] = vals
+    def update(self, idx:list, vals:np.ndarray, bias=0):
+        if bias == 0:
+            max_value = max(vals)
+            if max_value > self.max_value:
+                self.max_value = max_value
+            self.prior[idx] = vals
+        else:
+            max_value = max(vals)
+            if max_value > self.max_value:
+                self.max_value = max_value
+            idx = np.array(idx)
+            idx_check = idx > bias
+            idx = idx[idx_check]
+            self.prior[idx] = vals[idx_check]
     
     def __len__(self):
         return len(self.prior)
@@ -45,6 +54,9 @@ class PER:
         self.priority = Tree()
         self.maxlen = maxlen
         self.max_value = max_value
+
+        self.bias = 0
+        self.switch = False
         # self.alpha = alpha
 
     def push(self, d): 
@@ -53,7 +65,9 @@ class PER:
         self.priority.push(n)
         len_memory = len(self.memory)
         if len_memory > self.maxlen:
+            self.switch = True
             delta = len_memory - self.maxlen
+            self.bias += delta
             x = [i for i in range(delta)]
             np.delete(self.memory, x)
             np.delete(self.priority.prior, x)
@@ -70,7 +84,8 @@ class PER:
         """
         assert isinstance(vals, np.ndarray)
         assert isinstance(idx, list)
-        self.priority.update(idx, vals)
+        self.priority.update(idx, vals, bias=self.bias)
+        self.bias = 0
         
     def sample(self, batch_size):
         prob = self.priority.prior / np.sum(self.priority.prior)
