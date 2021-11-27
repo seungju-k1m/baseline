@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.lib.arraysetops import isin
 from baseline.utils import CompressedDeque
+from copy import deepcopy
 
 
 class Tree:
@@ -48,7 +49,7 @@ class PER:
 
     def push(self, d): 
         n = len(d)
-        self.memory = np.append(self.memory, d)
+        self.memory = np.append(self.memory, deepcopy(d))
         self.priority.push(n)
         len_memory = len(self.memory)
         if len_memory > self.maxlen:
