@@ -12,11 +12,12 @@ class Tree:
         self.maxlen = maxlen
         self.alpha = 1.0
     
-    def push(self):
-        self.prior = np.append(
-            self.prior, self.max_value ** self.alpha)
-        if len(self.prior) > self.maxlen:
-            np.delete(self.prior , 0)
+    def push(self, n=1):
+        for _ in range(n):
+            self.prior = np.append(
+                self.prior, self.max_value ** self.alpha)
+        # if len(self.prior) > self.maxlen:
+        #     np.delete(self.prior , 0)
     
     def update_max_value(self, value):
         self.max_value = value
@@ -35,22 +36,26 @@ class PER:
     def __init__(
         self,
         maxlen=1000,
-        max_value=1.0,
-        alpha=1.0):
+        max_value=1.0):
         self.length=0
         # self.memory = CompressedDeque(maxlen=maxlen)
         self.memory = np.empty(0)
         self.priority = Tree()
         self.maxlen = maxlen
         self.max_value = max_value
-        self.alpha = alpha
+        # self.alpha = alpha
 
     def push(self, d): 
+        n = len(d)
         self.memory = np.append(self.memory, d)
-        self.priority.push()
-        if len(self.memory) > self.maxlen:
-            np.delete(self.memory, 0)
-    
+        self.priority.push(n)
+        len_memory = len(self.memory)
+        if len_memory > self.maxlen:
+            delta = len_memory - self.maxlen
+            x = [i for i in range(delta)]
+            np.delete(self.memory, x)
+            np.delete(self.priority.prior, x)
+            
     def __getitem__(self, idx):
         return self.memory[idx]
 
@@ -66,8 +71,8 @@ class PER:
         self.priority.update(idx, vals)
         
     def sample(self, batch_size):
-        prob = self.priority / np.sum(self.priority)
-        idx = np.random.choice(len(self.priority), batch_size, p=prob)
+        prob = self.priority.prior / np.sum(self.priority.prior)
+        idx = np.random.choice(len(self.priority.prior), batch_size, p=prob)
         bin_data = self.memory[idx]
         s_prob = prob[idx]
         return list(bin_data), s_prob, idx
