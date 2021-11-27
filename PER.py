@@ -100,7 +100,7 @@ class PER:
         try:
             idx = np.random.choice(a, batch_size, p=prob)
         except ValueError:
-            print("Probability is WRONG?")
+            # print("Probability is WRONG?")
             d = 1 - sum(prob)
             i = np.random.randint(0, len(prob) - 1)
             prob[i] += d
