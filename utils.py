@@ -316,7 +316,7 @@ class ReplayMemory:
 
 
 class PrioritizedMemory(object):
-    def __init__(self, capacity, use_compress=False):
+    def __init__(self, capacity):
         self.capacity = capacity
         self.transitions = CompressedDeque()
         self.priorities = SumTree()
