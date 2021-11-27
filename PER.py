@@ -101,8 +101,10 @@ class PER:
             idx = np.random.choice(a, batch_size, p=prob)
         except ValueError:
             print("Probability is WRONG?")
-            print(sum(prob))
-            idx = np.random.choice(a, batch_size)
+            d = 1 - sum(prob)
+            i = np.random.randint(0, len(prob) - 1)
+            prob[i] += d
+            idx = np.random.choice(a, batch_size, p=prob)
         bin_data =[self.memory[id] for id in idx]
         s_prob = prob[idx]
         return list(bin_data), s_prob, idx
