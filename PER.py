@@ -73,7 +73,9 @@ class PER:
         
     def sample(self, batch_size):
         prob = self.priority.prior / np.sum(self.priority.prior)
-        idx = np.random.choice(len(self.priority.prior), batch_size, p=prob)
+        a = [i for i in range(len(prob))]
+        print(len(a), len(prob))
+        idx = np.random.choice(a, batch_size, p=prob)
         bin_data = self.memory[idx]
         s_prob = prob[idx]
         return list(bin_data), s_prob, idx
