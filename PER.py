@@ -13,9 +13,10 @@ class Tree:
         self.alpha = 1.0
     
     def push(self, n=1):
-        for _ in range(n):
-            self.prior = np.append(
-                self.prior, self.max_value ** self.alpha)
+        a = [self.max_value for i in range(n)]
+        self.prior = np.append(
+            self.prior, a
+        )
         # if len(self.prior) > self.maxlen:
         #     np.delete(self.prior , 0)
     
