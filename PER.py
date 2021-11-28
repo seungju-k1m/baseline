@@ -115,7 +115,7 @@ class PER:
         assert len(self.priority.prior) < (self.maxlen + 1)
         keys = list(self.memory.keys())
 
-        prob = self.priority.prior / np.sum(self.priority.prior)
+        prob = self.priority.prior / (np.sum(self.priority.prior)+1e-3)
 
         a = [i for i in range(len(prob))]
         try:
