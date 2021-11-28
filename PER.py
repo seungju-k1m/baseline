@@ -86,9 +86,8 @@ class PER:
         """
         binary data, probability, idx -> data:key
         """
-        assert len(self.priority.prior) < (self.maxlen + 1)
 
-        prob = self.priority.prior / (np.sum(self.priority.prior)+1e-3)
+        prob = self.priority.prior / (np.sum(self.priority.prior))
 
         a = [i for i in range(len(prob))]
         try:
@@ -101,10 +100,10 @@ class PER:
             else:
                 prob[-1] -= d
             idx = np.random.choice(a, batch_size, p=prob)
-        bin_data =[self.memory[id] for id in idx]
+        bin_data = deepcopy([self.memory[id] for id in idx])
         s_prob = prob[idx]
         
-        return list(bin_data), s_prob, idx
+        return bin_data, s_prob, idx
     
     def remove_to_fit(self):
         len_memory = len(self.memory)
