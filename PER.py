@@ -113,7 +113,7 @@ class PER:
         else:
             delta = len(self.memory) - self.maxlen
             del self.memory[:delta]
-            del self.priority[:delta]
+            del self.priority.prior[:delta]
 
     @property
     def max_weight(self):
