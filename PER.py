@@ -94,11 +94,12 @@ class PER:
             idx = np.random.choice(a, batch_size, p=prob)
         except ValueError:
             # print("Probability is WRONG?")
-            d = 1 - sum(prob)
-            if d > 0:
-                prob[-1] += d
-            else:
-                prob[-1] -= d
+            # d = 1 - sum(prob)
+            # if d > 0:
+            #     prob[-1] += d
+            # else:
+            #     prob[-1] -= d
+            prob = prob / np.sum(prob)
             idx = np.random.choice(a, batch_size, p=prob)
         bin_data = deepcopy([self.memory[id] for id in idx])
         s_prob = prob[idx]
