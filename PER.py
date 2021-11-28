@@ -133,5 +133,6 @@ class PER:
     
     @property
     def max_weight(self):
-        max_weight = (1 / (len(self.priority) * self.priority.max_value)) ** self.beta
+        min_value = min(self.priority.prior)
+        max_weight = (1 / (len(self.priority) * min_value)) ** self.beta
         return max_weight
