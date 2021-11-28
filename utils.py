@@ -122,8 +122,10 @@ def getOptim(optimData, agent, floatV=False):
             )
         if name == "rmsprop":
             momentum = 0 if "momentum" not in keyList else optimData["momentum"]
+            centered = False if "centered" not in keyList else optimData["centered"]
+            alpha = 0.99 if "alpha" not in keyList else optimData["alpha"]
             optim = torch.optim.RMSprop(
-                inputD, lr=lr, weight_decay=decay, eps=eps, momentum=momentum
+                inputD, lr=lr, weight_decay=decay, eps=eps, momentum=momentum, alpha=alpha, centered=centered
             )
 
     return optim
