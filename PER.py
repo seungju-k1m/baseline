@@ -28,19 +28,15 @@ class Tree:
     
     def update(self, idx:list, vals:np.ndarray, bias=0):
 
-        if bias == 0 or len(self.prior) < self.maxlen:
-            max_value = max(vals)
-            if max_value > self.max_value:
-                self.max_value = max_value
-            self.prior[idx] = vals
-        else:
-            max_value = max(vals)
-            if max_value > self.max_value:
-                self.max_value = max_value
-            idx = np.array(idx) - bias
-            idx_check = idx > 0
-            idx = idx[idx_check]
-            self.prior[idx] = vals[idx_check]
+        max_value = max(self.prior)
+        self.max_value = max_value
+        idx = np.array(idx) - bias
+        if max(idx) > self.maxlen:
+            print(bias)
+        assert max(idx) <= self.maxlen
+        idx_check = idx >= 0
+        idx = idx[idx_check]
+        self.prior[idx] = vals[idx_check]
     
     def __len__(self):
         return len(self.prior)
@@ -53,8 +49,9 @@ class PER:
         max_value=1.0):
         self.length=0
         # self.memory = CompressedDeque(maxlen=maxlen)
-        self.memory = deque(maxlen=maxlen)
+        # self.memory = deque(maxlen=maxlen)
         # self.memory = np.empty(0)
+        self.memory = {}
         self.priority = Tree()
         self.maxlen = maxlen
         self.max_value = max_value
@@ -63,36 +60,52 @@ class PER:
         self.switch = False
         # self.alpha = alpha
 
-    def push(self, d): 
+    def push(self, d, offset=0): 
         n = len(d)
-        # self.memory = np.append(self.memory, deepcopy(d))
-        [self.memory.append(i) for i in d]
+        for i, j in enumerate(d):
+            self.memory[i+offset] = j
         self.priority.push(n)
-        len_memory = len(self.priority)
-        if len_memory > (self.maxlen-1):
-            self.switch = True
-            delta = len_memory - self.maxlen
+
+        len_prioriy = len(self.priority)
+        # 10001
+        # offset: 9999
+        if len_prioriy > self.maxlen:
+            delta = len_prioriy - self.maxlen
             x = [i for i in range(delta)]
             self.priority.prior = np.delete(self.priority.prior, x)
-            
+            min_key = min(list(self.memory.keys()))
+            for m in range(delta):
+                del self.memory[min_key+m]
+            if len(self.memory) != self.maxlen or len(self.priority) != self.maxlen:
+                print(offset)
+                print(delta)
+                print(len(self.memory))
+                print(len(self.priority))
+                print('----------------')
+   
     def __getitem__(self, idx):
         return self.memory[idx]
 
     def __len__(self):
         return len(self.memory)
     
-    def update(self, idx:list, vals:np.ndarray, delta_frame):
+    def update(self, idx:list, vals:np.ndarray):
         """
         alpha !!
         """
         assert isinstance(vals, np.ndarray)
         assert isinstance(idx, list)
-        self.priority.update(idx, vals, delta_frame)
+
+        keys = list(self.memory.keys())
+        min_id = min(keys)
+        self.priority.update(idx, vals, min_id)
         
     def sample(self, batch_size):
-        if len(self.priority.prior) > self.maxlen or min(self.priority.prior) < 0:
-            print("WRONG")
-            print(min(self.priority.prior))
+        """
+        binary data, probability, idx -> data:key
+        """
+        assert len(self.priority.prior) < (self.maxlen + 1)
+        keys = list(self.memory.keys())
 
         prob = self.priority.prior / np.sum(self.priority.prior)
 
@@ -104,9 +117,11 @@ class PER:
             d = 1 - sum(prob)
             prob[-1] += d
             idx = np.random.choice(a, batch_size, p=prob)
-        bin_data =[self.memory[id] for id in idx]
+        key_idx = [keys[id] for id in idx]
+        bin_data =[self.memory[id] for id in key_idx]
         s_prob = prob[idx]
-        return list(bin_data), s_prob, idx
+        
+        return list(bin_data), s_prob, key_idx
     
     @property
     def max_weight(self):
