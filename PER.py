@@ -5,6 +5,7 @@ from baseline.utils import CompressedDeque
 from copy import deepcopy
 import itertools
 import _pickle as pickle
+import time
 
 
 class Tree:
