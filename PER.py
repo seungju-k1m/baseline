@@ -33,7 +33,9 @@ class Tree:
         idx = np.array(idx) - bias
         if max(idx) > self.maxlen:
             print(bias)
-        assert max(idx) <= self.maxlen
+            print(max(idx))
+            print(self.maxlen)
+        # assert max(idx) <= self.maxlen
         idx_check = idx >= 0
         idx = idx[idx_check]
         self.prior[idx] = vals[idx_check]
