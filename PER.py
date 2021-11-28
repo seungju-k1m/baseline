@@ -54,7 +54,7 @@ class PER:
         # self.memory = deque(maxlen=maxlen)
         # self.memory = np.empty(0)
         self.memory = {}
-        self.priority = Tree()
+        self.priority = Tree(maxlen=maxlen)
         self.maxlen = maxlen
         self.max_value = max_value
 
