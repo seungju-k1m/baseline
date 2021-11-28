@@ -113,7 +113,8 @@ class PER:
         else:
             delta = len(self.memory) - self.maxlen
             del self.memory[:delta]
-            del self.priority.prior[:delta]
+            ix = [i for i in range(delta)]
+            self.priority.prior = np.delete(self.priority.prior, ix)
 
     @property
     def max_weight(self):
