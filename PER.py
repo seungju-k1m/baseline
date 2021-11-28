@@ -4,6 +4,7 @@ from numpy.lib.arraysetops import isin
 from baseline.utils import CompressedDeque
 from copy import deepcopy
 import itertools
+import _pickle as pickle
 
 
 class Tree:
@@ -15,11 +16,11 @@ class Tree:
         self.maxlen = maxlen
         self.alpha = 1.0
     
-    def push(self, n=1):
-        a = [self.max_value for i in range(n)]
+    def push(self, priorities):
         self.prior = np.append(
-            self.prior, a
+            self.prior, priorities
         )
+        
         # if len(self.prior) > self.maxlen:
         #     np.delete(self.prior , 0)
     
@@ -64,9 +65,12 @@ class PER:
 
     def push(self, d, offset=0): 
         n = len(d)
+        priorities = []
         for i, j in enumerate(d):
+            data = pickle.loads(j)
+            priorities.append(data[-1])
             self.memory[i+offset] = j
-        self.priority.push(n)
+        self.priority.push(priorities)
 
         len_prioriy = len(self.priority)
         # 10001
