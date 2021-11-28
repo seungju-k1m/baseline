@@ -134,5 +134,5 @@ class PER:
     @property
     def max_weight(self):
         min_value = min(self.priority.prior)
-        max_weight = (1 / (len(self.priority) * min_value)) ** self.beta
+        max_weight = 1 / (len(self.priority) * min_value / np.sum(self.priority.prior)) ** self.beta
         return max_weight
