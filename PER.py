@@ -20,7 +20,7 @@ class Tree:
         self.prior = np.append(
             self.prior, priorities
         )
-        
+
         # if len(self.prior) > self.maxlen:
         #     np.delete(self.prior , 0)
     
@@ -49,7 +49,9 @@ class PER:
     def __init__(
         self,
         maxlen=1000,
-        max_value=1.0):
+        max_value=1.0,
+        beta=0.4):
+        self.beta = beta
         self.length=0
         # self.memory = CompressedDeque(maxlen=maxlen)
         # self.memory = deque(maxlen=maxlen)
@@ -131,4 +133,5 @@ class PER:
     
     @property
     def max_weight(self):
-        return self.priority.max_value
+        max_weight = (1 / (len(self.priority) * self.priority.max_value)) ** self.beta
+        return max_weight
