@@ -96,7 +96,10 @@ class PER:
         except ValueError:
             # print("Probability is WRONG?")
             d = 1 - sum(prob)
-            prob[-1] += d
+            if d > 0:
+                prob[-1] += d
+            else:
+                prob[-1] -= d
             idx = np.random.choice(a, batch_size, p=prob)
         bin_data =[self.memory[id] for id in idx]
         s_prob = prob[idx]
