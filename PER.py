@@ -35,8 +35,8 @@ class Tree:
     
     def update(self, idx:list, vals:np.ndarray):
 
-        max_value = max(self.prior)
-        self.max_value = max_value
+        # max_value = max(self.prior)
+        # self.max_value = max_value
         # idx = np.array(idx)
         # self.prior[idx] = vals
         self.prior_torch[idx] = torch.tensor(vals)
