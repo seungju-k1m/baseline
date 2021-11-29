@@ -6,6 +6,7 @@ from copy import deepcopy
 import itertools
 import _pickle as pickle
 import time
+import torch
 
 
 class Tree:
@@ -13,6 +14,7 @@ class Tree:
     def __init__(self, value=1.0, maxlen=10000):
         self.max_value = value
         self.prior = np.ones(0)
+        self.prior_torch = torch.tensor([])
         self.idx = []
         self.maxlen = maxlen
         self.alpha = 1.0
@@ -20,6 +22,9 @@ class Tree:
     def push(self, priorities):
         self.prior = np.append(
             self.prior, priorities
+        )
+        self.prior_torch = torch.cat(
+            (self.prior_torch, torch.tensor(priorities)), dim=0
         )
 
         # if len(self.prior) > self.maxlen:
@@ -32,8 +37,9 @@ class Tree:
 
         max_value = max(self.prior)
         self.max_value = max_value
-        idx = np.array(idx)
-        self.prior[idx] = vals
+        # idx = np.array(idx)
+        # self.prior[idx] = vals
+        self.prior_torch[idx] = torch.tensor(vals)
     
     def __len__(self):
         return len(self.prior)
@@ -88,20 +94,22 @@ class PER:
         binary data, probability, idx -> data:key
         """
 
-        prob = self.priority.prior / (np.sum(self.priority.prior))
+        # prob = self.priority.prior / (np.sum(self.priority.prior))
+        prob = self.priority.prior_torch / torch.sum(self.priority.prior_torch)
 
         a = [i for i in range(len(prob))]
-        try:
-            idx = np.random.choice(a, batch_size, p=prob)
-        except ValueError:
-            # print("Probability is WRONG?")
-            # d = 1 - sum(prob)
-            # if d > 0:
-            #     prob[-1] += d
-            # else:
-            #     prob[-1] -= d
-            prob = prob / np.sum(prob)
-            idx = np.random.choice(a, batch_size, p=prob)
+        idx = torch.multinomial(prob, batch_size)
+        # try:
+        #     idx = np.random.choice(a, batch_size, p=prob)
+        # except ValueError:
+        #     # print("Probability is WRONG?")
+        #     # d = 1 - sum(prob)
+        #     # if d > 0:
+        #     #     prob[-1] += d
+        #     # else:
+        #     #     prob[-1] -= d
+        #     prob = prob / np.sum(prob)
+        #     idx = np.random.choice(a, batch_size, p=prob)
         bin_data = deepcopy([self.memory[id] for id in idx])
         s_prob = prob[idx]
         
@@ -115,7 +123,8 @@ class PER:
             delta = len(self.memory) - self.maxlen
             del self.memory[:delta]
             ix = [i for i in range(delta)]
-            self.priority.prior = np.delete(self.priority.prior, ix)
+
+            self.priority.prior_torch = self.priority.prior_torch[delta:].contiguous()
 
     @property
     def max_weight(self):
