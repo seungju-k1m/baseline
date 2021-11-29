@@ -20,9 +20,9 @@ class Tree:
         self.alpha = 1.0
     
     def push(self, priorities):
-        self.prior = np.append(
-            self.prior, priorities
-        )
+        # self.prior = np.append(
+        #     self.prior, priorities
+        # )
         self.prior_torch = torch.cat(
             (self.prior_torch, torch.tensor(priorities)), dim=0
         )
