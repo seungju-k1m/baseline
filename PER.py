@@ -39,7 +39,7 @@ class Tree:
         # self.max_value = max_value
         # idx = np.array(idx)
         # self.prior[idx] = vals
-        self.prior_torch[idx] = torch.tensor(vals)
+        self.prior_torch[idx] = torch.tensor(vals).float()
     
     def __len__(self):
         return len(self.prior)
