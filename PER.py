@@ -96,9 +96,9 @@ class PER:
 
         # prob = self.priority.prior / (np.sum(self.priority.prior))
         prob = self.priority.prior_torch / torch.sum(self.priority.prior_torch)
-
-        a = [i for i in range(len(prob))]
-        idx = torch.multinomial(prob, batch_size)
+        dist = torch.distributions.categorical.Categorical(prob)
+        idx = dist.sample([batch_size])
+        # idx = torch.multinomial(prob, batch_size)
         # try:
         #     idx = np.random.choice(a, batch_size, p=prob)
         # except ValueError:
