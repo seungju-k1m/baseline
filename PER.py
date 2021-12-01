@@ -130,5 +130,5 @@ class PER:
     def max_weight(self):
         min_value = self.priority.prior_torch.min()
         min_prob = min_value / torch.sum(self.priority.prior_torch)
-        max_weight = (1 / (len(self.priority) * min_prob)) ** self.beta
-        return max_weight
+        max_weight = (len(self.priority) * min_prob) ** -self.beta
+        return float(max_weight)
