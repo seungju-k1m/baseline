@@ -32,7 +32,8 @@ from baseline.baseNetwork import (
     Stack,
     Subtrack,
     Add,
-    Mean
+    Mean,
+    ViewV2
 )
 
 
@@ -178,7 +179,8 @@ def constructNet(netData):
         Stack,
         Subtrack,
         Add,
-        Mean
+        Mean,
+        ViewV2
     ]
     netName = [
         "MLP",
@@ -201,7 +203,8 @@ def constructNet(netData):
         "Stack",
         "Substract",
         'Add',
-        "Mean"
+        "Mean",
+        "ViewV2"
     ]
     ind = netName.index(netCat)
 

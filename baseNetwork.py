@@ -919,6 +919,18 @@ class View(nn.Module):
         return x.view(self.shape)
 
 
+class ViewV2(nn.Module):
+
+    def __init__(self, data):
+        super(ViewV2, self).__init__()
+
+    def forward(self, x):
+        if type(x) == tuple:
+            x_ = x[1]
+            y = tuple(x[0].cpu().detach().numpy())
+        return x_.view(y)
+
+
 class LSTM(nn.Module):
     def __init__(self, netData):
         super(LSTM, self).__init__()
