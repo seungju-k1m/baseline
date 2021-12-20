@@ -298,10 +298,15 @@ class CompressedDeque(deque):
 
 class ReplayMemory:
     def __init__(self, capacity):
-        self.memory = CompressedDeque(maxlen=capacity)
+        # self.memory = CompressedDeque(maxlen=capacity)
+        self.memory = []
+        self.capacity = capacity
 
     def push(self, data):
-        self.memory.append(data)
+        self.memory += data
+        if len(self.memory) > self.capacity:
+            t = len(self.memory) - self.capacity
+            del self.memory[:t]
 
     def sample(self, batch_size):
         datas = random.sample(self.memory, batch_size)
